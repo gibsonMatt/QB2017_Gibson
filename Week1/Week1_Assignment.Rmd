@@ -105,7 +105,7 @@ Now, do the following:
 k <- c(5,6,7,8,9)
 k*x
 d <- c(w[0],w[1],w[2],k[0],k[1],k[2],k[3])
-d
+print(d)
 ```
 
 ### Summary Statistics of Vectors
@@ -135,7 +135,7 @@ Make the mean of the first column equal to 8 with a standard deviation of 2 and 
 col_1 <- c(rnorm(5, mean=8, sd=2))
 col_2 <- c(rnorm(5, mean=25, sd=10))
 newMatrix <- cbind(col_1, col_2)
-newMatrix
+print(newMatrix)
 
 ```
 
@@ -153,7 +153,7 @@ In the R code chunk below, do the following:
 
 ```{r}
 m <- read.table("data/matrix.txt", sep = "\t", header = F)
-dim(t(m))
+print(dim(t(m)))
 ```
 
 
@@ -170,7 +170,7 @@ In the R code chunk below, do the following:
 
 ```{r}
 m[ ,c(1:2, 4:5)]
-m[,-3]
+print(m[,-3])
 ```
 
 ***Question 3***: Describe what we just did in the last series of indexing steps.
@@ -188,7 +188,7 @@ In the R code chunk below, do the following:
 ```{r}
 meso <- read.table("data/zoop_nuts.txt", sep = "\t", header = T)
 
-str(meso)
+print(str(meso))
 ```
 
 ### Correlation
@@ -202,7 +202,7 @@ In the R code chunk below, do the following:
 meso.num <- meso[,3:8]
 pairs(meso.num)
 cor1 <- cor(meso.num)
-cor1
+print(cor1)
 ```
 
 
@@ -219,9 +219,9 @@ In the R code chunk below, do the following:
 ```{r}
 library(psych)
 cor2 <- corr.test(meso.num, method="pearson", adjust="BH")
-cor2
+print(cor2)
 cor3 <- corr.test(meso.num, method="kendall", adjust="BH")
-cor3
+print(cor3)
 ```
 
 ***Question 5***: Describe what you learned from `corr.test`. 
@@ -327,8 +327,8 @@ arrows(x0 = bp, y0 = zp.means, y1 = zp.means + zp.sem, angle = 90,
        length = 0.1, lwd=1)
 
 fitanova <- aov(ZP ~ NUTS, data = meso)
-summary(fitanova)
-TukeyHSD(fitanova)
+print(summary(fitanova))
+print(TukeyHSD(fitanova))
 
 
 ```
@@ -406,8 +406,8 @@ arrows(x0 = bp, y0 = sp.means, y1 = sp.means + sp.sem, angle = 90,
 #We "stack" the data to make doing an ANOVA with `aov()` easier.
 stacked <- stack(zoop)
 test <- aov(values~ind, data=stacked)
-summary(test)
-TukeyHSD(test)
+print(summary(test))
+print(TukeyHSD(test))
 ```   
    
 > We see based on the barplot, ANOVA, and Tukey tests that the species CHYD has a significantly high mean biomass (mg/L) and is therefore likely contributing the most to the diferential biomass response to nutrient levels. The SIMO species also showed a high mean biomass (compared to the other species) but this difference was not significant based on any of the post-hoc tests. 
