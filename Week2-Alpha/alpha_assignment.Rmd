@@ -1,6 +1,6 @@
 ---
 title: "Assignment: Local (alpha) Diversity"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Matt Gibson; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -35,10 +35,10 @@ In the R code chunk below, please provide the code to:
 4) Load the `vegan` R package (be sure to install if needed).
 
 ```{r}
-
-
-
-
+rm(list=ls())
+getwd()
+setwd("~/Github/QB2017_Gibson/Week2-Alpha")
+require('vegan')
 ```
 
 ## 2) LOADING DATA
@@ -48,8 +48,9 @@ In the R code chunk below, do the following:
 2) Display the structure of the dataset (if the structure is long, use `max.level=0` to show just basic information).
 
 ```{r}
-
-
+data(BCI)
+str(BCI)
+str(BCI, max.level=0)
 ```
 
 ## 3) SPECIES RICHNESS
@@ -68,16 +69,25 @@ In the R code chunk below, do the following:
 
 ```{r}
 
-# S.obs <- function(   ){
-#   rowSums(     ) * 
-#   }
+S.obs <- function(x = ""){
+  rowSums(x > 0) * 1
+    }
 
+#For site 1 using `S.obs`
+print(S.obs(BCI[1,]))
+
+#For site 1 using `specnumber()`
+print(specnumber(BCI[1,]))
+
+
+#For first 4 sites:
+print(specnumber(BCI[1:4,]))
 ```
 
 ***Question 1***: Does `specnumber()` from `vegan` return the same value for observed richness in `site1` as our function `S.obs`?
 What is the species richness of the first 4 sites (i.e., rows) of the BCI matrix?
 
-> ***Answer 1***:
+> ***Answer 1***: Yes, `specnumber()` returns the same value for observed richness in site1 as foes `S.obs`. The species richness for the first 4 sites is 93, 84, 90, and 94, respectively.
 
 
 
@@ -90,7 +100,18 @@ In the R code chunk below, do the following:
 2. Use that function to calculate coverage for all sites in the BCI matrix.
 
 ```{r}
+C <- function(x = ""){
+  1 - (sum(x == 1) / rowSums(x))
+}
 
+#ADD LOOP HERE
+coverage <- C(BCI[1,])
+print(coverage)
+
+range(coverage)
+
+# Number of singletons
+sum(BCI[1,] == 1)/S.obs(BCI[1,])
 
 ```
   
@@ -101,13 +122,13 @@ b.  What would we conclude from Good's Coverage if $n_{i}$ equaled *N*?
 c.  What portion of taxa in `site1` were represented by singletons? 
 d.  Make some observations about coverage at the BCI plots.
 
-> ***Answer 2a***:  
+> ***Answer 2a***: Between 0 and 1.
 
-> ***Answer 2b***:  
+> ***Answer 2b***: It would be 0.
 
-> ***Answer 2c***:  
+> ***Answer 2c***: 31 singleton taxa. Proportion of singleton taxa = .3333 (# of singletons/S.obs for site 1)
 
-> ***Answer 2d***:  
+> ***Answer 2d***: Coverage is around .9 for all sites. Values for Good's Coverage range from 0.8705882 0.9468504. The lowest was site 23. The highest was site 4. 
 
 
 ### Estimated Richness
@@ -125,12 +146,17 @@ In the R code chunk below, do the following:
 5. Calculate the coverage at that particular site
 
 ```{r}
+soilBac <- read.table("data/soilbac.txt", sep="\t", header=T, row.names=1)
+soilbac.t <- as.data.frame(t(soilBac))
+soilbac1 <- soilbac.t[1,]
 
+#Obs richness
+print(S.obs(soilbac1))
+#Coverage
+print(C(soilbac1))
 
-
-
-
-
+# Number sequences recovered
+sum(soilbac1)
 ```
 
 ***Question 3***: Answer the following questions about the soil bacterial dataset. 
@@ -139,11 +165,11 @@ a.  How many sequences did we recover from the sample `soilbac1`, i.e. *N*?
 b.  What is the observed richness of `soilbac1`? 
 c.  How does coverage compare between the BCI sample (`site1`) and the KBS sample (`soilbac1`)?
 
-> ***Answer 3a***:  
+> ***Answer 3a***: We recovered 2119 sequences from the sample soilbac1.
 
-> ***Answer 3b***: 
+> ***Answer 3b***: The observed richness was 1074
 
-> ***Answer 3c***:  
+> ***Answer 3c***: The coverage for the BCI site1 (0.9308036) was higher than the KBS sample site1 (0.6479471).
 
 
 ### Richness Estimators
@@ -159,15 +185,38 @@ In the R code chunk below, do the following:
 4. Use these functions to estimate richness at both `site1` and `soilbac1`. 
 
 ```{r}
+S.chao1 <- function(x = ""){
+  S.obs(x) + (sum(x == 1)^2) / (2 * sum(x == 2))
+}
 
+S.chao2 <- function(site = "", SbyS = ""){
+  SbyS = as.data.frame(SbyS)
+  x = SbyS[site, ]
+  SbyS.pa <- (SbyS > 0) * 1
+  Q1 = sum(colSums(SbyS.pa) == 1)
+  Q2 = sum(colSums(SbyS.pa) == 2)
+  S.chao2 = S.obs(x) + (Q1^2)/(2 * Q2)
+  return(S.chao2)
+}
 
-
-
-
-
-
-
-
+S.ace <- function(x = "", thresh = 10){
+  x <- x[x>0]
+  S.abund <- length(which(x > thresh))
+  S.rare <- length(which(x <= thresh))
+  singlt <- length(which(x == 1))
+  N.rare <- sum(x[which(x <= thresh)])
+  C.ace <- 1 - (singlt / N.rare)
+  i <- c(1:thresh)
+  count <- function(i, y){
+    length(y[y == i])
+  }
+  
+  a.1 <- sapply(i, count, x)
+  f.1 <- (i * (i -1)) * a.1
+  G.ace <- (S.rare/C.ace)*(sum(f.1)/(N.rare*(N.rare - 1)))
+  S.ace <- S.abund + (S.rare/C.ace) + (singlt/C.ace) * max(G.ace,0)
+  return(S.ace)
+}
 
 
 
