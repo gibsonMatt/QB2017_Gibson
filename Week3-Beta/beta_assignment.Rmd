@@ -1,7 +1,7 @@
 ---
-title: "Assignment: Among Site (Beta) Diversity"
-author: "Matt Gibson; Z620: Quantitative Biodiversity, Indiana University"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+title: 'Assignment: Among Site (Beta) Diversity'
+author: 'Matt Gibson; Z620: Quantitative Biodiversity, Indiana University'
+date: 
 output: pdf_document
 geometry: margin=2.54cm
 ---
@@ -45,7 +45,7 @@ In the R code chunk below, provide the code to:
 ```{r}
 rm(list=ls())
 getwd()
-setwd("~/Github/QB2017_Gibson/Week3-Beta")
+setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/Week3-Beta")
 library(vegan)
 
 ```
@@ -91,9 +91,9 @@ a.  How does fish richness vary along the sampled reach of the Doubs River?
 b.  How does Brown Trout (*Salmo trutta*) abundance vary along the sampled reach of the Doubs River?
 c.  What do these patterns say about the limitations of using richness when examining patterns of biodiversity?
 
-> ***Answer 2a***:  Fish richness is overall higher downstream and "midstream' than upstream. There is a large increase in richness in the curve of the Doubs river in the middle. 
-> ***Answer 2b***:  Brown trout abundance is higher towards the upstream than the downstream. This differences between the two sides of the river are very extreme...with abundance values of mostly 0 on the downstream side. 
-> ***Answer 2c***:  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+> ***Answer 2a***:  Fish richness is overall higher downstream and midstream than upstream. There is a large increase in richness in the curve of the Doubs river in the middle. 
+> ***Answer 2b***:  Brown trout abundance is higher towards the upstream than the downstream. This difference between the two sides of the river is very extreme...with abundance values of mostly 0 on the downstream side. 
+> ***Answer 2c***:  That it may not capture the entire picture. Richness is depicted as being relatively high in places where brown trout abundance is 0! In other words, richness is a very condensed metric and we may be losing important imformation. 
 
 ## 3) QUANTIFYING BETA-DIVERSITY
 
@@ -117,8 +117,11 @@ beta.w <- function(site.by.species = "", sitenum1 = "", sitenum2 = "", pairwise 
     site1 = subset(site1, select = site1 > 0)
     site2 = subset(site2, select = site2 > 0)
     gamma = union(colnames(site1), colnames(site2))
+    
     s = length(gamma)
+    print(s)
     a.bar = mean(c(specnumber(site1), specnumber(site2)))
+    print(a.bar)
     #print(a.bar)
     b.w = round(s/a.bar - 1,3)
     return(b.w)
@@ -127,6 +130,8 @@ beta.w <- function(site.by.species = "", sitenum1 = "", sitenum2 = "", pairwise 
     SbyS.pa <- decostand(site.by.species, method = "pa")
     S <- ncol(SbyS.pa[,which(colSums(SbyS.pa) > 0)])
     a.bar <- mean(specnumber(SbyS.pa))
+    print(S)
+    print(a.bar)
     b.w <- round(S/a.bar, 3)
     return(b.w)
 }}
@@ -144,16 +149,16 @@ a.  Describe how local richness ($\alpha$) and turnover ($\beta$) contribute to 
 b.  Is the fish assemblage at site 1 more similar to the one at site 2 or site 10?
 c.  Using your understanding of the equation $\beta_{w} = \gamma/\alpha$, how would your interpretation of $\beta$ change if we instead defined beta additively (i.e., $\beta = \gamma - \alpha$)?
 
-> ***Answer 3a***:  They are multiplicative. $\gamma = \beta \alpha$. 
+> ***Answer 3a***:  They are multiplicative. $\gamma = \beta \alpha$. $\alpha = 12.5$ and $\beta = 2.16$. Together, local richness and species turnover leads to higher levels of regional diversity, even when average local richness is relatively low. 
 > ***Answer 3b***:  Site 1 is more similar to site 10 based on the pairwise $\beta_{w}$ for the two sites. 
-> ***Answer 3c***:  !!!
+> ***Answer 3c***:  If it were instead $\beta = \gamma - \alpha$, our estimate for $\beta$ diversity would not be between 0 and 1. Numbers close to 0, though, would indicate a high degree of similarity between two sites.
 
 ### The Resemblance Matrix
 In order to quantify $\beta$-diversity for more than two samples, we need to introduce a new primary ecological data structure: the **Resemblance Matrix**. 
 
 ***Question 4***: How do incidence- and abundance-based metrics differ in their treatment of rare species?
 
-> ***Answer 4***:  
+> ***Answer 4***:  Incidence-based metrics explicitly take into account the number of shared species between the two sites (a), the number of unique species in site 1 (b) and the number of unique species in site 2 (c). The abundance-based metrics rather take sums of, for example, the difference in abundance between sites for each species. In the abundance-based metrics, the rarity of a species is captured quantitatively. 
 
 In the R code chunk below, do the following:  
 
@@ -163,13 +168,24 @@ In the R code chunk below, do the following:
 4. construct a resemblance matrix based on Bray-Curtis Distance ("fish.db").  
 
 ```{r}
+fish <- doubs$fish
+fish <- fish[-8, ]
 
+#ds
+fish.ds <- vegdist(fish, method = "bray", binary= T, diag = T)
+#db
+fish.db <- vegdist(fish, method = "bray", diag = T)
 
+x <- ncol(as.matrix(fish.ds))
 
-
-
-
-
+fish.ds <- as.matrix(fish.ds)
+fish.db <- as.matrix(fish.db)
+i <- 0
+x <- seq(1, x)
+for (i in x){
+  print(i)
+  print(rbind(fish.ds[,i], fish.db[,i]))
+}
 
 ```
 
@@ -178,8 +194,8 @@ In the R code chunk below, do the following:
 a. Does the resemblance matrix (`fish.db`) represent similarity or dissimilarity? What information in the resemblance matrix led you to arrive at your answer? 
 b. Compare the resemblance matrices (`fish.db` or `fish.ds`) you just created. How does the choice of the Sørensen or Bray-Curtis distance influence your interpretation of site (dis)similarity?
 
-> ***Answer 5a***:  
-> ***Answer 5b***:
+> ***Answer 5a***:  It is a DISSIMILARITY resemblance matrix. When I also include the diagonal values, they are all 0. If the diagonals were all 1, it would be a similarity matrix. 
+> ***Answer 5b***: I looped over all the values and printed them next to eachother to assess their similarity (the similarity of their dissimilarity...). The two resemblance matrices agree relatively well, though there are some exceptions were the estimates for one cell in the matrix are very different. In several comparisons, the Sørensen value is half that of the Bray-Curtis value. Given this finding, if abundance data is available, the abundance-based metrics should always be used. The Sørensen metric appears to be consistently lower than the Bray-Curtis metric. When using incidence data to assess resemblance, it may be wise to expect dissimilarity to be underestimated (or similarity to be overestimated).
 
 ## 4) VISUALIZING BETA-DIVERSITY
 
@@ -193,14 +209,12 @@ In the R code chunk below, do the following:
 
 ```{r}
 
+fish.db <- vegdist(fish, method = "bray", diag = T)
+order <- rev(attr(fish.db, "Labels"))
 
-
-
-
-
-
-
-
+levelplot(as.matrix(fish.db)[, order], aspect = "iso", col.regions = inferno,
+          xlab = "Doubs Site", ylab = "Doubs Site", scales = list(cex = 0.5),
+          main = "Bray-Curtis Distance")
 
 ```
 
@@ -213,19 +227,18 @@ In the R code chunk below, do the following:
 
 ```{r} 
 
+fish.ward <- hclust(fish.db, method="ward.D2")
 
-
-
-
-
-
-
+par(mar = c(1, 5, 2, 2) + 0.1)
+plot(fish.ward, main = "Doubs River Fish: Ward's Clustering", 
+     ylab = "Squared Bray-Curtis Distance")
 
 ```
 
 ***Question 6***: Based on cluster analyses and the introductory plots that we generated after loading the data, develop an ecological hypothesis for fish diversity the `doubs` data set? 
-
-> ***Answer 6***: 
+  
+  
+> ***Answer 6***: If the site numbers provided represent the order of sites (e.g. site 22 is next to site 23), and I think they do, then a possible ecological hypothesis is that specific parts of the river harbor specific fish and that migration up and down the river may be relatively rare. I make this hypothesis based on the fact that clustering tended to group adjacent sites. The first big cluster on the left contained sites 1-14 (give or take a few sites), the next cluster contained sites 23-25, and so on. Looking at the Fish richness introductory plot, it is clear that sites in the same region share relatively the same richness values. We could break this analysis down even further to look at what species are overrepresented in what parts of the river.
 
 ### C.  Ordination
 
@@ -240,14 +253,46 @@ In the R code chunk below, do the following:
 5. identify influential species and add species coordinates to PCoA plot.
 
 ```{r}
+fish.pcoa <- cmdscale(fish.db, eig=T, k = 3)
+explainvar1 <- round(fish.pcoa$eig[1] / sum(fish.pcoa$eig), 3) * 100
+explainvar2 <- round(fish.pcoa$eig[2] / sum(fish.pcoa$eig), 3) * 100
+explainvar3 <- round(fish.pcoa$eig[3] / sum(fish.pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+#Variance explained by first axis
+explainvar1
+#variance explained by second axis
+explainvar2
+#variance explained by third axis
+explainvar3
+sum.eig
+
+par(mar = c(5, 5, 1, 2) + 0.1)
+
+plot(fish.pcoa$points[ ,1], fish.pcoa$points[ ,2], ylim = c(-0.2, 0.7),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%", sep = ""),
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = F)
+
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+points(fish.pcoa$points[ ,1], fish.pcoa$points[ ,2],
+       pch = 19, cex = 3, bg = "gray", col = "gray")
+text(fish.pcoa$points[ ,1], fish.pcoa$points[ ,2],
+     labels = row.names(fish.pcoa$points))
 
 
+fishREL <- fish
+  for(i in 1:nrow(fish)){
+    fishREL[i, ] = fish[i, ]/ sum(fish[i, ])
+  }
 
-
-
-
-
-
+fish.pcoa <- add.spec.scores(fish.pcoa, fishREL, method = "pcoa.scores")
+text(fish.pcoa$cproj[ ,1], fish.pcoa$cproj[ ,2],
+     labels = row.names(fish.pcoa$cproj), col = "black")
 
 ```
 
@@ -258,11 +303,12 @@ In the R code chunk below, do the following:
 
 ```{r}
 
+spe.corr <- add.spec.scores(fish.pcoa, fishREL, method = "cor.scores")$cproj
+corrcut <- 0.7
+imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
 
-
-
-
-
+fit <- envfit(fish.pcoa, fishREL, perm = 999)
+print(fit)
 ```
 
 ***Question 7***: Address the following questions about the ordination results of the `doubs` data set:
@@ -270,8 +316,8 @@ In the R code chunk below, do the following:
 a.  Describe the grouping of sites in the Doubs River based on fish community composition.
 b.  Generate a hypothesis about which fish species are potential indicators of river quality.
 
-> ***Answer 7a***:  
-> ***Answer 7b***:   
+> ***Answer 7a***:  It appears that there are roughly three site groupings. Those towards the bottom left of the plot (driven by Satr, Phph and Neba), those toward the bottom right (apparently driven by the large assemblage of species seen to the right of the origin), and the few sites towards the top of the plot (driven by Lece, Ruru, and Alal). Relatively few species appear to strongly contribute to variation in fish community composition throughout the river (Satr, Phph, Neba, Leve, Ruru, & Alal) but the large grouping of species coordinates to the right of the origin may indicate that smaller differences in the composition of several species are driving the variation in diversity of the sites seen in the bottom right of the graph. 
+> ***Answer 7b***:  Strong indicators of river quality (if we consider river quality to be a function of fish diversity) could be the following species: Satr, Phph, Neba, Alal, Lece, and Ruru. Indeed, these species have small, significant p-values based on the permutations tests for correlations along the PcoA axes. But, many other species are also highly (and signficantly) correlated...I would think that these species are those that are clustered to the right of the origin.
 
 
 ## 5) HYPOTHESIS TESTING
@@ -286,19 +332,23 @@ In the code chunk below, test the hypothesis that fish community composition var
 
 ```{r}
 
+quality <- c(rep("HQ", 13), rep("MQ", 5), rep("LQ", 6), rep("MQ", 5))
+adonis(fish ~ quality, method = "bray", permutations = 999)
+#Quality is significant in the PERMANOVA ( p = 0.001)
 
+indval <- multipatt(fish, cluster = quality, func = "IndVal.g", control = how(nperm=999))
+summary(indval)
 
-
-
-
-
+fish.rel <- decostand(fish, method = "total")
+phi <- multipatt(fish.rel, cluster=quality, func = "r.g", control = how(nperm=999))
+summary(phi)
 
 
 ```
 
 ***Question 8***: Based on the PERMANOVA, IndVal, and phi coefficient analyses, what did you learn about the relationship between habitat quality and the fish species composition?
 
-> ***Answer 8***: 
+> ***Answer 8***: Based on the PERMANOVA, the factor `quality` is significantly related to species composition (P = 0.001). To look at how individuals species are related to sites (or groups of sites) we used indicator values and phi coefficients. Based on IndVals, only one species is signficantly associated with a single group (Teso with MQ site). Two species are signficantly associated with the group combination HQ+MQ (Satr and Phph) and 20 species are significantly associated with the combination LQ+MQ. Using phi coefficients of association to assess the habitat preferences of each species, we find that three species are signficantly associated with the HQ group (Phph, Neba, and Satr), two species are associated with the LQ group (Alal, and Ruru), four species are associated with the MQ group (Anan, Spbi, Chto, and Icme), and nine species are associated with the combination LQ+MQ. All together, it appears that specific species of fish are in fact associated with river quality (if we agree with the a priori classification of the sites by river quality).
 
 
 ### B.  Multivariate Procedures for Continuous Designs
@@ -310,21 +360,22 @@ In the R code chunk below, do the following:
 2. use a Mantel test to determine if these matrices are correlated, and test the hypothesis that fish assemblages are correlated with stream environmental variables.
 
 ```{r}
+fish.dist <- vegdist(doubs$fish[-8, ], method = "bray")
+env.dist <- vegdist(scale(doubs$env[-8,]), method = "euclid")
 
-
-
+mantel(fish.dist, env.dist)
 
 
 ```
 
 ***Question 9***: What do the results from our Mantel test suggest about fish diversity and stream environmental conditions? How does this relate to your hypothesis about stream quality influencing fish communities?
 
-> ***Answer 9***:  
+> ***Answer 9***:  Fish diversity and stream environmental conditions are significantly correlated at $\alpha = 0.05$ (r = 0.604, P = 0.001). This result agrees with the hypothesis that stream quality influences fish communities and agrees with the results of the species-site group association tests.
 
 ### ii.  Constrained Ordination
 In the R code chunk below, do the following:  
 
-1. create an environmental matrix of the water chemistry data included in the `doubs` dataset using forward and reverse selection of variables,
+1. create an environmental matrix of the water chemistry data included in the `doubs` dataset using forward and reverse selection of variables,???
 2. conduct a redundancy analysis on the fish assemblages of the Doubs River,
 3. use a permutation test to determine the significance of the constrained analysis,
 4. use a permutation test to determine the correlation of each environmental factor on the constrained axes,
@@ -333,30 +384,75 @@ In the R code chunk below, do the following:
 7. add vectors that demonstrate the influence of each environmental factor the constrained ordination.   
 
 ```{r}
+env.chem <- as.matrix(doubs$env[-8, 5:11])
 
+doubs.dbrda <- dbrda(fish.db ~ ., as.data.frame(env.chem))
+ordiplot(doubs.dbrda)
 
+doubs.dbrda.mod0 <- dbrda(fish.db ~ 1, as.data.frame(env.chem))
 
+ordiplot(doubs.dbrda.mod0)
 
+doubs.dbrda.mod1 <- dbrda(fish.db ~ ., as.data.frame(env.chem))
 
+#Model selection
+doubs.dbrda <- ordiR2step(doubs.dbrda.mod0, doubs.dbrda.mod1, perm.max= 200)
 
+doubs.dbrda$call
+doubs.dbrda$anova
+ordiplot(doubs.dbrda)
 
+#3
+permutest(doubs.dbrda, permutations = 999)
+#4
+envfit(doubs.dbrda, env.chem[,c(4, 6, 7)], perm = 999)
 
+#5
+dbrda.explainvar1 <- round(doubs.dbrda$CCA$eig[1] /
+                             sum(c(doubs.dbrda$CCA$eig, doubs.dbrda$CA$eig)), 3) * 100
+dbrda.explainvar2 <- round(doubs.dbrda$CCA$eig[2] /
+                             sum(c(doubs.dbrda$CCA$eig, doubs.dbrda$CA$eig)), 3) * 100
+dbrda.explainvar1
+dbrda.explainvar2
+#6
+par(mar = c(5, 5, 4, 4) + 0.1)
 
+plot(scores(doubs.dbrda, display = "wa"), xlim = c(-3.5, 2), ylim = c(-3.2, 3.2),
+xlab = paste("dbRDA 1 (", dbrda.explainvar1, "%)", sep = ""),
+ylab = paste("dbRDA 2 (", dbrda.explainvar2, "%)", sep = ""),
+pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
 
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
 
+points(scores(doubs.dbrda, display = "wa"),
+  pch = 19, cex = 3, bg = "gray", col = "gray")
 
+text(scores(doubs.dbrda, display = "wa"),
+  labels = row.names(scores(doubs.dbrda, display = "wa")))
 
+vectors <- scores(doubs.dbrda, display = "bp")
 
+#row.names(vectors) <- c("pH", "har", "pho", "nit", "amm", "oxy", "bdo")
 
+arrows(0, 0, vectors[,1], vectors[, 2],
+  lwd = 2, lty = 1, length = 0.2, col = "red")
+text(vectors[,1], vectors[, 2], pos = 3,
+  labels = row.names(vectors))
 
-
+axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
+at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
+axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
+at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
 
 
 ```
 
-***Question 10***: Based on the constrained ordination, what are the environmental variables (or groups of correlated variables) that seem to be contributing to variation in fish community structure?
+***Question 10***: Based on the constrained ordination , what are the environmental variables (or groups of correlated variables) that seem to be contributing to variation in fish community structure?
 
-> ***Answer 10***: 
+> ***Answer 10***: Based on the distance-based redundancy analysis (dbRDA), the environmental variables `bdo`(biological demand for oxygen; P = 0.001), `nit`(nitrates; P= 0.001), and `oxy`(dissolved oxygen; P = 0.001) appear to be contributing the most to variation in fish community structure. 
 
 ### iii. Variation Partitioning
 In the code chunk below,   
@@ -368,18 +464,130 @@ In the code chunk below,
 5. Partition the variation among sites into the relative importance of space, environment, spatially structured environment, and residuals,
 6. Plot the variation partitioning output to visualize it.  
 ```{r}
+doubs.dbrda$anova
+
+env.mod <- model.matrix(~ oxy + bdo + nit, as.data.frame(env.chem))[,-1]
+rs <- rowSums(fish)/sum(fish)
+
+doubs.pcnmw <- pcnm(dist(doubs$xy[-8,]), w = rs, dist.ret = T)
+
+doubs.pcnmw$values > 0
+
+doubs.space <- as.data.frame(scores(doubs.pcnmw))
+doubs.pcnm.mod0 <- dbrda(fish.db ~ 1, doubs.space)
+doubs.pcnm.mod1 <- dbrda(fish.db ~ ., doubs.space)
+step.pcnm <- ordiR2step(doubs.pcnm.mod0, doubs.pcnm.mod1, perm.max = 200)
+
+plot(step.pcnm)
+
+step.pcnm$anova
+
+space.mod <- model.matrix(~ PCNM2 + PCNM3 + PCNM5 + PCNM1 + PCNM13 + PCNM16 + PCNM6, doubs.space)[,-1]
 
 
+doubs.total.env <- dbrda(fish.db ~ env.mod)
+doubs.total.space <- dbrda(fish.db ~ space.mod)
+
+doubs.env.cond.space <- dbrda(fish.db ~ env.mod + Condition(space.mod))
+doubs.space.cond.env <- dbrda(fish.db ~ space.mod + Condition(space.mod))
 
 
+permutest(doubs.env.cond.space, permutations = 999)
+permutest(doubs.space.cond.env, permutations = 999)
+permutest(doubs.total.env, permutations = 999)
+permutest(doubs.total.space, permutations = 999)
 
 
+doubs.varpart <- varpart(fish.db, env.mod, space.mod)
+doubs.varpart
 
+par(mar = c(2,2,2,2))
+plot(doubs.varpart)
+text(1, 0.25, "Space")
+text(0, 0.25, "Env")
+mtext("Variation partitioning of \nDoubs Fish Diversity", side = 3, line = -3)
 ```
 
 ***Question 11***: Interpret the variation partitioning results.   
 
-> ***Answer 11***: 
+> ***Answer 11***: As one might expect, the highest amount of variation (37%) in fish diversity is explained by both environment and space. Space exclusively explains more variation in diversity than environment (24% vs 13%). This is a common finding...at least by my experience with the literature. Even when populations are experiencing very similar environments, isolation-by-distance is typically very strong. Mating and social behavior may limit fish in one region from moving to another. As well, physical boundaries or strong currents may prohibit homogenization of the river's diversity. 
 
 ## SYNTHESIS
 Load the dataset you are using for your project. Perform an ordination to visualize your dataset.  Using this ordination, develop some hypotheses relevant to $\beta$-diversity and identify the appropriate tools you would use to test them.
+
+
+```{r}
+setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/project")
+myData <- read.table("data/speciesdata_clean.csv", sep=",", header=T, row.names = 1)
+#Remove unneeded data
+myData <- myData[, 4:ncol(myData)]
+
+spec.bray <- vegdist(myData, method = "bray")
+
+####Waaaay to many sites to get anything out of the heatmap...
+
+#order <- rev(attr(spec.bray, "Labels"))
+
+#levelplot(as.matrix(spec.bray)[, order], aspect = "iso", col.regions = inferno,
+#          xlab = "Site", ylab = "Site", scales = list(cex = 0.5),
+#          main = "Bray-Curtis Distance")
+
+spec.pcoa <- cmdscale(spec.bray, eig=T, k=3)
+explainvar1 <- round(spec.pcoa$eig[1] / sum(spec.pcoa$eig), 3) * 100
+explainvar2 <- round(spec.pcoa$eig[2] / sum(spec.pcoa$eig), 3) * 100
+explainvar3 <- round(spec.pcoa$eig[3] / sum(spec.pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+#Variance explained by first axis
+explainvar1
+#variance explained by second axis
+explainvar2
+#variance explained by third axis
+explainvar3
+sum.eig
+
+par(mar = c(5, 5, 1, 2) + 0.1)
+
+plot(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2], ylim = c(-0.2, 0.7),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%", sep = ""),
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = F)
+
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+#I plotted just the country code...full site names were too long
+points(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2],
+       pch = 19, cex = 3, bg = "gray", col = "gray")
+text(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2],
+     labels = substr(row.names(spec.pcoa$points),1,2))
+
+
+specREL <- myData
+  for(i in 1:nrow(myData)){
+    specREL[i, ] = myData[i, ]/ sum(myData[i, ])
+  }
+
+spec.pcoa <- add.spec.scores(spec.pcoa, specREL, method = "pcoa.scores")
+
+#Is just a mess.........
+#text(spec.pcoa$cproj[ ,1], spec.pcoa$cproj[ ,2],
+#     labels = row.names(spec.pcoa$cproj), col = "black")
+
+
+spe.corr <- add.spec.scores(spec.pcoa, specREL, method = "cor.scores")$cproj
+corrcut <- 0.8
+imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+
+#As expected, this takes quite a long time...
+fit <- envfit(spec.pcoa, specREL, perm = 999)
+```
+
+  
+Based on the ordination, sites appear to group by country. This is expected. We could do a PERMANOVA using `country` as a factor to formally test this. Though I am perhaps most insterested in what environmental factors underlie this grouping. Further I would be interested in testing what the relative contributions of isolation-by-distance and isolation-by-environment are on the observed variation in species diversity.    
+   
+We could begin our analysis by doing a Mantel test with the site X env (removing lat lon data) and site X species matrices. Next, we could do a constrined coordination (either an RDA or CCA) implementing variable selection procedures to identify environmental variables contributing to species community structure (the variables that define the environments of the several European regions).   
+   
+Next, using the environmental variables identified as being important and the latitude and longitude values for each site, we could do partial constrained ordination and variance partitioning to calculate the fractions of variance in species diversity explained by distance, environment, and by both distance and environment. 
