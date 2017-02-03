@@ -1,6 +1,6 @@
 ---
 title: "Assignment: Spatial Diversity"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Matt Gibson; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -48,14 +48,20 @@ In the R code chunk below, do the following:
 1. Install and/or load the following packages: `vegan`, `sp`, `gstat`, `raster`, `RgoogleMaps`, `maptools`, `rgdal`, `simba`, `gplots`, `rgeos`
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE} 
+rm(list=ls())
+getwd()
+setwd("~/GitHub/QB2017_Gibson/Week4-Spatial")
 
-
-
+package.list <- c('vegan', 'sp', 'gstat','raster', 'RgoogleMaps', 'maptools', 'rgdal',
+                  'simba', 'gplots', 'rgeos', 'rgdal')
+for (p in package.list){
+  library(p, character.only = T)
+}
 ```
 
 ***Question 1***:  What are the packages `simba`, `sp`, and `rgdal` used for?
 
-> ***Answer 1***:  
+> ***Answer 1***:  Simba is for calculating similarity measures, rgdal is a geospatial abstraction (?) library.
 
 
 ## 3) LOADING DATA
@@ -67,17 +73,32 @@ In the R code chunk below, use the example in the handout to do the following:
 4. Remove the first column (i.e., site names) from the OTU matrix.
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE} 
+Ponds <- read.table("BrownCoData/20130801_PondDataMod.csv", sep=",", header=T)
+OTUs <- read.csv("BrownCoData/SiteBySpecies.csv", sep=",", header=T)
+otu.names <- names(OTUs)
+OTUs <- as.data.frame(OTUs[-1])
+d <- dim(OTUs)
+s <- seq(2, d[1])
 
+S.obs <- function(x = ""){
+  rowSums(x > 0) * 1
+}
+richness <- S.obs(OTUs[1,])
 
+for (i in s) {
+  richness <- cbind(richness, S.obs(OTUs[i, ]))
+}
+
+max(richness)
 ```
 
 ***Question 2a***:  How many sites and OTUs are in the SiteBySpecies matrix? 
 
-> ***Answer 2a***:  
+> ***Answer 2a***:  There are 51 sites and 16383 OTUs
 
 ***Question 2b***:  What is the greatest species richness found among sites?
 
-> ***Answer 2b***:  
+> ***Answer 2b***:  3658 at site 47
 
 
 ## 4) GENERATE MAPS
@@ -88,12 +109,19 @@ In the R code chunk below, do the following:
 This map will be centered on Brown County, Indiana (39.1 latitude, -86.3 longitude).
 
 ```{r}
+lats <- as.numeric(Ponds[, 3])
+lons <- as.numeric(Ponds[, 4])
 
+newmap <- GetMap(center = c(39.1, -86.3), zoom = 10,
+                 destfile = "PondsMap.png", maptype = "terrain")
+
+PlotOnStaticMap(newmap, zoom = 10, cex = 2, col = 'blue')
+PlotOnStaticMap(newmap, lats, lons, cex = 1, pch = 20, col = 'red', add = T)
 ```
 
 ***Question 3***:  Briefly describe the geographical layout of our sites.
 
-> ***Answer 3***:  
+> ***Answer 3***:  The sites are all located within Brown County State Park, with most of the sites aggregated towards the North and Northwest side of the park. The sites are not distributed very evenly. 
 
 
 In the R code chunk below, do the following:  
@@ -102,36 +130,36 @@ In the R code chunk below, do the following:
 
 ```{r}
 # 1. Import TreeCover.tif as a raster file.
-
+Tree.Cover <- raster("TreeCover/TreeCover.tif")
 # 2. Plot the % tree cover data
-
+plot(Tree.Cover, xlab = "Longtitude", ylab = 'Latitude', main = 'Map of geospatial data for % tree cover, \nwater bodies, and sample sites')
 # 3. Import water bodies as a shapefile.
-
+Water.Bodies <- readShapeSpatial("water/water.shp")
 # 4. Plot the water bodies around our study area, i.e., Monroe County.
-
+plot(Water.Bodies, border='cyan', axes = T, add = T)
 # 5. Convert lat-long data for ponds to georeferenced points.
-
+Refuge.Ponds <- SpatialPoints(cbind(lons, lats))
 # 6. Plot the refuge pond locations
-
+plot(Refuge.Ponds, line='r', col='red', pch=20, cex=1.5, add=T)
 ```
 
 ***Question 4a***: What are datums and projections?
 
-> ***Answer 4a***:  
+> ***Answer 4a***:  A datum is the model of Earth's shape (of which there are many) and a projection is the way which we take coordinates on a sphere and "project" them onto the 2D map.
 
 
 ## 5) UNDERSTANDING SPATIAL AUTOCORRELATION
 
 ***Question 5***: In your own words, explain the concept of spatial autocorrelation.
 
-> ***Answer 5***:
+> ***Answer 5***: Spatial autocorrelation is the degree to which sites that are close to one another in space have similar trait values. !!!!!
 
 
 ## 6) EXAMINING DISTANCE-DECAY
 
 ***Question 6***: In your own words, explain what a distance decay pattern is and what it reveals.
 
-> ***Answer 6***:
+> ***Answer 6***: Distance decay patterns (or graphs) describe how species composition similarity (or dissimilarity) between sites is related to the geographic distance between sites. If this pattern shows a negative relationship, that would be evidence for spatial autocorrelation (sites closer together are more similar to one another).  !!! 
 
 In the R code chunk below, do the following:  
 
@@ -140,9 +168,16 @@ Note: You will need to use some of the data transformations within the *semivari
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE}
 # 1) Calculate Bray-Curtis similarity between plots using the `vegdist()` function
-
+comm.dist <- 1- vegdist(OTUs)
 # 2) Assign UTM lattitude and longitude data to 'lats' and 'lons' variables
-
+xy <- data.frame(env = Ponds$TDS, pond.name = Ponds$Sample_ID, lats = Ponds$lat, lons = Ponds$long)
+coordinates(xy) <- ~lats+lons
+proj4string(xy) <- CRS("+proj=longlat +datum=NAD83")
+UTM <- spTransform(xy, CRS("+proj=utm +zone=51 +ellps=WGS84"))
+xy$lats_utm <- UTM[,2]
+xy$lons_utm <- UTM[,3]
+lats <- as.numeric(xy$lats_utm)
+lons <- as.numeric(xy$lons_utm)
 # 3) Calculate geographic distance between plots and assign to the variable 'coord.dist'
 
 # 4) Transform environmental data to numeric type, and assign to variable 'x1'
