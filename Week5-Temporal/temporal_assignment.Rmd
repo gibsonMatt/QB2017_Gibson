@@ -1,6 +1,6 @@
 ---
 title: "Assignment: Temporal Diversity"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Matt Gibson; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -41,8 +41,22 @@ In the R code chunk below, provide the code to:
 4. load any packages you need to complete the assignment.
 
 ```{r}
+rm(list=ls())
+getwd()
+setwd("~/Github/QB2017_Gibson/Week5-Temporal")
+
+package.list <- c('vegan', 'tidyr', 'dplyr', 'codyn', 'ggplot2', 
+                  'cowplot', 'MullerPlot', 'RColorBrewer', 'reshape2', 'lubridate',
+                  'TTR', 'xtable', 'multcomp', 'pander', 'png', 'grid', 'tseries', 'nlme',
+                  'forecast', 'lsmeans')
 
 
+for (package in package.list){
+  if (!require(package, character.only=T, quietly=T)){
+    install.packages(package, repos="http://cran.us.r-project.org")
+    library(package, character.only=T)
+  }
+}
 
 
 ```
@@ -55,10 +69,11 @@ In the R code chunk below, do the following:
 2. explore the structure of the dataset.
 
 ```{r}
+portal <- read.table("data/combined.csv", sep=",", header=T)
 
-
-
-
+str(portal)
+dplyr::count(portal, plot_id)
+dplyr::count(portal, species)
 ```
 
 ***Question 1***:  Describe some of the attributes of the `portal` dataset.  
@@ -66,8 +81,8 @@ In the R code chunk below, do the following:
 a.  How many plots are in `portal`?
 b.  How many rodent species are there in the `portal` dataset?
 
-> ***Answer 1a***:  
-> ***Answer 1b***:  
+> ***Answer 1a***:  24
+> ***Answer 1b***:  40
 
 ## 3) WRANGLING THE PORTAL DATASET
 
