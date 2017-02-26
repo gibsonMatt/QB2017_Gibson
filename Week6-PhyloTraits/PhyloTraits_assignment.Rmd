@@ -1,6 +1,6 @@
 ---
 title: "Phylogenetic Diversity - Traits"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Matt Gibson; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -45,7 +45,19 @@ In the R code chunk below, provide the code to:
 4. load all of the required R packages (be sure to install if needed).  
 
 ```{r}
+rm(list = ls())
+getwd()
+setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/Week6-PhyloTraits")
+package.list <- c("ape", "seqinr", "phylobase", "adephylo", "geiger", "picante", "stats", "RColorBrewer", "caper", "phylolm",
+                  "pmc", "ggplot2", "tidyr", "dplyr", "phangorn", "pander")
 
+library(alr4)
+for (package in package.list){
+  if (!require(package, character.only=T, quietly=T)){
+    install.packages(package, repos="http://cran.us.r-project.org")
+    library(package, character.only=T)
+  }
+}
 
 ```
 
@@ -61,7 +73,7 @@ In this exercise, we will take a phylogenetic approach to mapping phosphorus res
 ***Question 1***: Using less or your favorite text editor, compare the `p.isolates.fasta` file and the `p.isolates.afa` file. 
 Describe the differences that you observe between the files. 
 
-> ***Answer 1***: 
+> ***Answer 1***: The `p.isolates.afa` file contains sites with the `-` character to indicate insertions. The `p.isolates.fasta` file does not have this information. The fasta file just contains continuous sequences as they were read by the sequencer (i.e. it is blind to the location of insertions or deletions). The `-` characters are added by aligning the sequences against a reference. 
 
 In the R code chunk below, do the following:
 1. read your alignment file,
@@ -70,8 +82,10 @@ In the R code chunk below, do the following:
 4. plot the alignment using a grid to visualize rows of sequences.
 
 ```{r}
-
-
+read.aln <- read.alignment(file = "./data/p.isolates.afa", format = "fasta")
+p.DNAbin <- as.DNAbin(read.aln)
+window <- p.DNAbin[, 100:1000]
+image.DNAbin(window, cex.lab = 0.5)
 ```
 
 ***Question 2***:  Make some observations about the `muscle` alignment of the 16S rRNA gene sequences for our bacterial isolates and the outgroup, *Methanosarcina*, a member of the domain archaea. 
@@ -80,8 +94,8 @@ Move along the alignment by changing the values in the `window` object.
 a. Approximately how long are our reads?  
 b. What regions do you think would are appropriate for phylogenetic inference and why?  
 
-> ***Answer 2a***:   
-> ***Answer 2b***:  
+> ***Answer 2a***: ~700 bp
+> ***Answer 2b***: The positions that are polymorhpic.
 
 ## 4) MAKING A PHYLOGENETIC TREE
 
@@ -97,14 +111,26 @@ In the R code chunk below, do the following:
 4. plot the rooted tree. 
 
 ```{r}
+seq.dist.raw <- dist.dna(p.DNAbin, model = "raw", pairwise.deletion=F)
 
+nj.tree <- bionj(seq.dist.raw)
 
+outgroup <- match("Methanosarcina", nj.tree$tip.label)
+
+nj.rooted <- root(nj.tree, outgroup, resolve.root = T)
+
+par(mar = c(1,1,2,1), 0.1)
+plot.phylo(nj.rooted, main = "Neighbor Joining Tree", "phylogram",
+           use.edge.length = F, direction = "right", cex = 0.6,
+           label.offset = 1)
+
+add.scale.bar(cex = 0.7)
 ```
 
 ***Question 3***: What are the advantages and disadvantages of making a neighbor joining tree?   
 
 
-> ***Answer 3***:  
+> ***Answer 3***:  Neighbor joining trees simply find the most similar taxa and groups them to create a node. There is no inference based on maximum liklihood, bayesian statistics, or bootstrapping. It is great for getting a quick idea of what the phylogeny might be, but it lacks any measures of support for the nodes. 
  
 
 
@@ -117,8 +143,33 @@ In the R code chunk below, do the following:
 4. create a cophylogenetic plot to compare the topologies of the trees.
 
 ```{r}
+seq.dist.F84 <- dist.dna(p.DNAbin, model = "F84", pairwise.deletion = F)
+
+par(mar = c(5,5,2,1), 0.1)
+plot(seq.dist.raw, seq.dist.F84,
+     pch = 20, col="red", las = 1, asp = 1, xlim = c(0,0.7), ylim = c(0,0.7),
+     xlab = "Raw Distance", ylab="F84 Distance")
+abline(b = 1, a = 0, lty = 2)
+text(0.65, 0.6, "1:1")
 
 
+raw.tree <- bionj(seq.dist.raw)
+F84.tree <- bionj(seq.dist.F84)
+
+raw.outgroup <- match("Methanosarcina", raw.tree$tip.label)
+F84.outgroup <- match("Methanosarcina", F84.tree$tip.label)
+
+raw.rooted <- root(raw.tree, raw.outgroup, resolve.root = T)
+F84.rooted <- root(F84.tree, F84.outgroup, resolve.root=T)
+
+layout(matrix(c(1,2), 1, 2), width = c(1,1))
+par(mar = c(1,1,2,0))
+plot.phylo(raw.rooted, type = "phylogram", direction = "right", show.tip.label=T,
+           use.edge.length = F, adj = 0.5, cex = 0.6, label.offset = 2, main = "Raw")
+
+par(mar = c(1, 0, 2, 1))
+plot.phylo(F84.rooted, type = "phylogram", direction = "left", show.tip.label=T,
+           use.edge.length = F, adj = 0.5, cex = 0.6, label.offset = 2, main = "F84")
 ```
 
 In the R code chunk below, do the following:  
@@ -129,8 +180,30 @@ In the R code chunk below, do the following:
 5. be sure to format, add appropriate labels, and customize each plot.
 
 ```{r}
+seq.dist.K80 <- dist.dna(p.DNAbin, model = "JC69", pairwise.deletion = F)
+
+par(mar = c(5,5,2,1), 0.1)
+plot(seq.dist.F84, seq.dist.K80,pch = 20, col="red", las = 1, asp = 1, xlim = c(0,0.7), ylim = c(0,0.7),
+     xlab = "F84 Distance", ylab="JC69")
+abline(b = 1, a = 0, lty = 2)
+text(0.65, 0.6, "1:1")
+
+#IS actually JC69...not K80
+K80.tree <- bionj(seq.dist.K80)
+F84.tree <- bionj(seq.dist.F84)
+
+K80.outgroup <- match("Methanosarcina", K80.tree$tip.label)
+K80.rooted <- root(K80.tree, K80.outgroup, resolve.root=T)
 
 
+layout(matrix(c(1,2), 1, 2), width = c(1,1))
+par(mar = c(1,1,2,0))
+plot.phylo(K80.rooted, type = "phylogram", direction = "right", show.tip.label=T,
+           use.edge.length = F, adj = 0.5, cex = 0.6, label.offset = 2, main = "JC69")
+
+par(mar = c(1, 0, 2, 1))
+plot.phylo(F84.rooted, type = "phylogram", direction = "left", show.tip.label=T,
+           use.edge.length = F, adj = 0.5, cex = 0.6, label.offset = 2, main = "F84")
 ```
 
 ***Question 4***:  
@@ -140,9 +213,9 @@ b. Using the saturation plot and cophylogenetic plots from above, describe how y
 If the plots are inconsistent with one another, explain why.
 c. How does your model compare to the *F84* model and what does this tell you about the substitution rates of nucleotide transitions?
 
-> ***Answer 4a***:   
-> ***Answer 4b***:   
-> ***Answer 4c***:   
+> ***Answer 4a***:   I chose the JC69 model. It assumes that all nucleotides occur at equal frequencies and that all mutation types occur with equal probability. The F84 model, however, takes into account the different probabilities of transitions and transversions and allows for differences in nucleotide frequencies. The F84 model is likely more accurate!
+> ***Answer 4b***:   Based on the saturation plot, it appears that F84 distance may tend to be greater than the JC69 distance, but this is a very slight difference. The models are very similar. The topologies are different based on the cophylogenetic trees. Interestingly, the JC69 tree looks very similar to the raw tree plotted above. The JC69 and F84 trees differ because we are using two different models of nucleotide evolution. One that assumes equal frequency of all nucleotides and equal probability of any mutation type and one that allows nucleotides to occur at different frequencies and mutations to be biased.
+> ***Answer 4c***:   Based on the saturation plot, I would think that the `F84` model's assumption of different transition and transversion rates is more accurate. Also because we know that there is actually a bias for transition mutations.
 
 ### C) ANALYZING A MAXIMUM LIKELIHOOD TREE
 
@@ -151,7 +224,12 @@ In the R code chunk below, do the following:
 2. Plot bootstrap support values onto the tree
 
 ```{r}
-
+ml.bootstrap <- read.tree("./data/ml_tree/RAxML_bipartitions.T1")
+par(mar = c(1,1,2,1) + 0.1)
+plot.phylo(ml.bootstrap, type = "phylogram", direction = "right", show.tip.label = T, use.edge.length = F, cex = 0.6,
+           label.offset = 1, main = "Maximum Likelihood with Support Values")
+add.scale.bar(cex = 0.7)
+nodelabels(ml.bootstrap$node.label, font = 2, bg = "white", frame = "r")
 
 ```
 
@@ -168,11 +246,11 @@ d) Which branches have very low support?
 
 e) Should we trust these branches? 
 
-> ***Answer 5a***:   
-> ***Answer 5b***:   
-> ***Answer 5c***:   
-> ***Answer 5d***:   
-> ***Answer 5e***:   
+> ***Answer 5a***:   The topologies are different but the major groupings are roughly the same (some clades are in flipped orientations, though). There are more deep bifurcations in the neighbor joining tree. The differences likely arise since the NJ tree does not take into account nucleotide states as in a ML tree and is not a statistical estimation of the most probable tree. We don't know the "true distance" between each taxa, so we must resort to maximization procedures such as ML. 
+> ***Answer 5b***:   So that we can estimate our confidence in the branches of our tree. We generate a sample of trees from sampling data randomly with replacement from our original data.
+> ***Answer 5c***:   The values tell us how often we see that branch in our sample of bootstrapped trees. Each time a new bootstrapped tree is generated, it is comapred to the original. If it shares a particular branch, the branch is given a score of 1. If it doesn't, it gets a score of 0. This is repeated over hundreds to thousands of iterations. 
+> ***Answer 5d***:   Three of the deep interior branches have low support (56, 56, and 50) as well as several exterior branches. 
+> ***Answer 5e***:   We should not trust these branches as they have bootstrap values below 95%. Though I think it would depend on our a priori expectations. If these are all very closely related individuals and we are trying to visualize a phylogeny, we would probably expect branch support to be low overall.
 
 
 ## 5) INTEGRATING TRAITS AND PHYLOGENY
@@ -184,7 +262,8 @@ In the R code chunk below, do the following:
 2. standardize the data for each strain by the sum of growth rates.
 
 ```{r}
-
+p.growth <- read.table("./data/p.isolates.raw.growth.txt", sep = "\t", header = T, row.names = 1)
+p.growth.std <- p.growth / (apply(p.growth, 1, sum))
 
 ```
 
@@ -196,7 +275,20 @@ In the R code chunk below, do the following:
 3. use this function to calculate *nb* for each isolate.
 
 ```{r}
+umax <- (apply(p.growth,  1, max))
+umax
+levins <- function(p_xi = ""){
+  p = 0
+  for (i in p_xi){
+    p = p + i^2
+  }
+  nb = 1/(length(p_xi)*p)
+  return(nb)
+}
 
+nb <- as.matrix(levins(p.growth.std))
+rownames(nb) <- row.names(p.growth)
+colnames(nb) <- c("NB")
 
 ```  
 
@@ -208,7 +300,12 @@ In the R code chunk below, do the following:
 3. remove the outgroup branch.
 
 ```{r}
+seq.dist.JC69 <- dist.dna(p.DNAbin, model = "JC69", pairwise.deletion = F)
+JC69.tree <- bionj(seq.dist.JC69)
 
+JC69.outgroup <- match("Methanosarcina", JC69.tree$tip.label)
+JC69.rooted <- root(JC69.tree, JC69.outgroup, resolve.root=T)
+JC69.rooted <- drop.tip(JC69.rooted, "Methanosarcina")
 
 ```
 
@@ -220,7 +317,22 @@ In the R code chunk below, do the following:
 
 
 ```{r}
+mypalette <- colorRampPalette(brewer.pal(9, "Reds"))
 
+par(mar = c(1,1,1,1) + 0.1)
+x <- phylo4d(JC69.rooted, p.growth.std)
+table.phylo4d(x, treetype = "phylo", symbol = "colors", show.node = T,
+              cex.label = 0.5, scale = F, use.edge.length = F,
+              edge.color = "black", edge.width = 2, box = F,
+              col=mypalette(25), pch=15, cex.symbol = 1.25,
+              ratio.tree = 0.5, cex.legend = 1.5, center = F)
+
+par(mar = c(1,5,1,5) + 0.1)
+x.nb <- phylo4d(JC69.rooted, nb)
+table.phylo4d(x.nb, treetype = "phylo", symbol = "colors",show.node = T,
+              cex.label = 0.5, scale = F, use.edge.length =F, edge.color = "black",
+              edge.width = 2, box = F, col = mypalette(25), pch = 15, cex.symbol = 1.25, var.label=("      NB"),
+              ratio.tree = 0.9, cex.legend = 1.5, center = F)
 
 ```
 
@@ -230,8 +342,8 @@ a) Make a hypothesis that would support a generalist-specialist trade-off.
 
 b) What kind of patterns would you expect to see from growth rate and niche breadth values that would support this hypothesis?
 
-> ***Answer 6a***:   
-> ***Answer 6b***:   
+> ***Answer 6a***:   Being a generalist (as quantified using Levin's niche breadth) leads to lower maximum growth rate and being a specialist, higher.
+> ***Answer 6b***:   A generalist species should grow moderately well on many or all substrates and a specialist should grow very well on few substrates and poor on the rest. This is generally what we see in our results. The taxa WG49 (with the highest max growth rate and smallest niche breadth) grows well on really only one substrate (Phyt). WG26 however, has a low max growth rate, higher niche breadth, and can grow moderately well on many more substrates. 
 
 ## 6) HYPOTHESIS TESTING
 
@@ -243,7 +355,14 @@ In the R code chunk below, do the following:
 3. label and customize the trees as desired.
 
 ```{r}
+nj.lambda.5 <- rescale(JC69.rooted, "lambda", 0.5)
+nj.lambda.0 <- rescale(JC69.rooted, "lambda", 0)
 
+layout(matrix(c(1,2,3), 1, 3), width = c(1, 1, 1))
+par(mar=c(1,0.5,2,0.5) +0.1)
+plot(JC69.rooted, main = "lambda = 1", cex = 0.7, adj = 0.5)
+plot(nj.lambda.5, main = "lambda = 0.5", cex = 0.7, adj = 0.5)
+plot(nj.lambda.0, main = "lambda = 0", cex = 0.7, adj = 0.5)
 
 ```
 
@@ -251,7 +370,8 @@ In the R code chunk below, do the following:
 1. use the `fitContinuous()` function to compare your original tree to the transformed trees.
 
 ```{r}
-
+fitContinuous(JC69.rooted, nb, model = "lambda")
+fitContinuous(nj.lambda.0, nb, model = "lambda")
 
 ```
 
@@ -260,9 +380,9 @@ a. Compare the lambda values of the untransformed tree to the transformed (lambd
 b. Compare the Akaike information criterion (AIC) scores of the two models. Which model would you choose based off of AIC score (remember the criteria that the difference in AIC values has to be at least 2)?
 c. Does this result suggest that there's phylogenetic signal?
 
-> ***Answer 7a***:  
-> ***Answer 7b***:  
-> ***Answer 7c***:  
+> ***Answer 7a***:  The lambda value in the untransformed tree is higher (0.0462) than in the transformed tree (0.0)
+> ***Answer 7b***:  The AIC of the untransformed tree (-37.49) is slightly lower than that for the transformed tree (-37.41). Although, the models must be considered equivalent since the difference in AIC is not greater than 2. 
+> ***Answer 7c***:  This result suggests there is NO phylogenetic signal for niche breadth. The transformed tree removed all existing phylogenetic signal.... So when we tested the two models and they came out equal, that suggests there is no phylogenetic signal for niche breadth. 
 
 ### B) Phylogenetic Signal: Blomberg's K 
 
@@ -273,8 +393,28 @@ In the R code chunk below, do the following:
 4. calculate Blomberg's K for niche breadth using the `phylosignal()` function.
 
 ```{r}
+JC69.rooted$edge.length <- JC69.rooted$edge.length + 10^-7
+
+p.phylosignal <- matrix(NA, 6, 18)
+colnames(p.phylosignal) <- colnames(p.growth.std)
+rownames(p.phylosignal) <- c("K", "PIC.var.obs", "PIC.var.mean",
+                             "PIC.var.P", "PIC.var.z", "PIC.P.BH")
+
+for (i in 1:18){
+  x <- as.matrix(p.growth.std[ ,i, drop = FALSE])
+  out <- phylosignal(x, JC69.rooted)
+  p.phylosignal[1:5, i] <- round(t(out), 3)
+  
+}
 
 
+p.phylosignal[6, ] <- round(p.adjust(p.phylosignal[4, ], method = "BH"), 3)
+
+p.phylosignal
+
+
+signal.nb <- phylosignal(nb, JC69.rooted)
+signal.nb
 ```
 
 ***Question 8***: Using the K-values and associated p-values (i.e., "PIC.var.P"") from the `phylosignal` output, answer the following questions:
@@ -282,8 +422,8 @@ In the R code chunk below, do the following:
 a.  Is there significant phylogenetic signal for niche breadth or standardized growth on any of the phosphorus resources?  
 b.  If there is significant phylogenetic signal, are the results suggestive of clustering or overdispersion?  
 
-> ***Answer 8a***:   
-> ***Answer 8b***:   
+> ***Answer 8a***:   There is no significant phylogenetic signal for niche breadth (alpha = 0.05). There is a significant phylogenetic signal for two phosphorous resources (DNA and cAMP). 
+> ***Answer 8b***:   The results are suggestive of overdispersion (K < 1) for all resources.
 
 ### C.  Calculate Dispersion of a Trait
 
@@ -294,6 +434,22 @@ In the R code chunk below, do the following:
 4. use `phylo.d()` to calculate *D* on at least three phosphorus traits.
 
 ```{r}
+p.growth.pa <- as.data.frame((p.growth > 0.01) * 1)
+
+apply(p.growth.pa, 2, sum)
+
+p.growth.pa$name <- rownames(p.growth.pa)
+
+p.traits <- comparative.data(JC69.rooted, p.growth.pa, "name")
+print(d1 <- phylo.d(p.traits, binvar = BGP))
+d1$Pval1
+d1$Pval0
+print(d2 <- phylo.d(p.traits, binvar = DNA))
+d2$Pval1
+d2$Pval0
+print(d3 <- phylo.d(p.traits, binvar = cAMP))
+d3$Pval1
+d3$Pval0
 
 
 ```
@@ -304,9 +460,9 @@ a.  Choose three phosphorus growth traits and test whether they are significantl
 b.  How do these results compare the results from the Blomberg's K analysis?  
 c.  Discuss what factors might give rise to differences between the metrics.  
 
-> ***Answer 9a***:  
-> ***Answer 9b***:  
-> ***Answer 9c***:  
+> ***Answer 9a***:  BGP had a negative D (-.45; clustered) but this is not significantly different from 0 so we can't rule out whether this is due to random clumping. DNA had a positive D (0.5259; overdispersed) and this value is significantly different from 0 and 1. cAMP had a positive D (0.12107; overdispersed). This value is significantly different from 1, ruling out Brownian dispersal of traits but is not significantly different from 0, so this trait may be randomly clumped into a phylogenetic structure.
+> ***Answer 9b***:  Bloomberg's K revealed that growth on two substrates (DNA, and cAMP) were overdispersed. Based on these analyses, we can only conclude that growth on DNA is overdispersed.
+> ***Answer 9c***:  The two methods attempt to address the same things but do so in  different ways. Bloomberg's K is calculated by comparing the MSE of the trait data and the MSE of the variance-covariance matrix derived from the phylogeny under the assumption of Brownian motion. The estimate of D, however, is a formal test of ecological dispersion used to measure how traits or species are spatially dispersed. It is being applied to phylogenetics. One thing to note is that in order to calculate an estimate of D, we had to convert our continuous data to categorical and we may have lost some power to detect dispersion by doing so. tl;dr The two estimates use fairly different methods to calculate dispersion and to estimate D we had to convert continuous data to categorical. 
 
 ## 7) PHYLOGENETIC REGRESSION
 
@@ -316,8 +472,42 @@ In the R code chunk below, do the following:
 2. Fit a phylogenetic regression to the trait dataset, taking into account the mammal supertree
 
 ```{r}
+mammal.Tree <- read.tree("./data/mammal_best_super_tree_fritz2009.tre")
+mammal.data <- read.table("./data/mammal_BMR.txt", sep = "\t", header=T)
 
+mammal.data <- mammal.data[, c("Species", "BMR_.mlO2.hour.","Body_mass_for_BMR_.gr.")]
+mammal.species <- array(mammal.data$Species)
 
+pruned.mammal.tree <- drop.tip(mammal.Tree, mammal.Tree$tip.label[-na.omit(match(mammal.species, 
+                                                                                 mammal.Tree$tip.label))])
+
+pruned.mammal.data <- mammal.data[mammal.data$Species %in% pruned.mammal.tree$tip.label,]
+
+rownames(pruned.mammal.data) <- pruned.mammal.data$Species
+
+fit <- lm(log10(BMR_.mlO2.hour.) ~ log10(Body_mass_for_BMR_.gr.),
+          data = pruned.mammal.data)
+
+plot(log10(pruned.mammal.data$Body_mass_for_BMR_.gr.), log10(pruned.mammal.data$BMR_.mlO2.hour.),
+     las = 1, xlab = "Body mass (kg), log", ylab = "Basal Metabolic Rate (BMR), log")
+abline(a = fit$coefficients[1], b = fit$coefficients[2])
+b1 <- round(fit$coefficients[2], 3)
+eqn <- bquote(italic(z) == .(b1))
+
+text(0.5, 4.5, eqn, pos = 4)
+summary(fit)
+
+fit.phy <- phylolm(log10(BMR_.mlO2.hour.) ~ log10(Body_mass_for_BMR_.gr.),
+                   data = pruned.mammal.data, pruned.mammal.tree, model = "lambda",
+                   boot = 0)
+plot(log10(pruned.mammal.data$Body_mass_for_BMR_.gr.), log10(pruned.mammal.data$BMR_.mlO2.hour.),
+     las = 1, xlab = "Body Mass (kg), log", ylab = "Basal Metabolic Rate (BMR), log")
+abline(a = fit.phy$coefficients[1], b = fit.phy$coefficients[2])
+b1.phy <- round(fit.phy$coefficients[2], 3)
+eqn <- bquote(italic(z) == .(b1.phy))
+text(0.5, 4.5, eqn, pos = 4)
+
+summary(fit.phy)
 ```
   
 
@@ -326,10 +516,10 @@ b. How does a phylogenetic regression differ from a standard linear regression?
 c. Interpret the slope and fit of each model. Did accounting for shared evolutionary history improve or worsten the fit?
 d. Try to come up with a scenario where the relationship between two variables would completely disappear when the underlying phylogeny is accounted for.
 
-> ***Answer 10a***:  
-> ***Answer 10b***:  
-> ***Answer 10c***:  
-> ***Answer 10d***:  
+> ***Answer 10a***:  Because observations of a trait value in multiple taxa may not be independent if they evolved in a common ancestor!
+> ***Answer 10b***:  In a phylogenetic regression, instead of assuming that resisduals are iid. normal, we describe them by a covariance matrix taking into account the underlying phylogeny. 
+> ***Answer 10c***:  Accounting for shared evolutionary history improved the fit of the model. We got a higher slope (a stronger relationship).
+> ***Answer 10d***:  Flower size vs. latitude in plants. There may exist a pattern of smaller flower size as you move further north. This relationship may be explained mostly by phylogenetic relatedness and evolution of smaller or larger flower sizes in common ancestors. 
 
 
 ## 7) SYNTHESIS
@@ -349,14 +539,30 @@ tradeoff <- data.frame(nb,umax,lake) # make new data frame
 D <- (lake == "LL") * 1
 fit<-lm(log10(umax) ~ nb + D + nb * D)
 
+plot(log10(tradeoff$umax) ~ tradeoff$NB)
 
-  
+scatterplot(log10(umax) ~ NB| lake, data=tradeoff, smooth=F, boxplots=T, ylab="log(uMax)")
+
+X <- split(tradeoff, tradeoff$lake)
+
+lm3 <- lm(log10(X$WG$umax)~ X$WG$NB)
+
+lm2 <- lm(log10(X$LL$umax)~ X$LL$NB)
+plot(log10(X$LL$umax)~ X$LL$NB, col = "black", ylab = "log(umax)", xlab = "NB")
+points(X$WG$NB, log10(X$WG$umax), col = "red")
+abline(lm2, col = "black")
+abline(lm3, col = "red")
+
+
+#plot(log10(X$WG$umax)~ X$WG$NB)
+
+
 
 ```
 
 ***Question 11***: Based on your knowledge of the traits and their phylogenetic distributions, what conclusions would you draw about our data and the evidence for a generalist-specialist tradeoff? 
 
 
-> ***Answer 11***:
+> ***Answer 11***: When there are more available phosphorous sources (WG lake), the relationship between max growth rate and niche breadth is stronger (i.e. there is a tradeoff). When there are fewer available phosphorous sources (as in the LL lake), the weaker the relationship (i.e. there is no tradeoff).
 
 
