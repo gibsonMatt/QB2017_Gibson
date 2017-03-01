@@ -43,7 +43,7 @@ In the R code chunk below, provide the code to:
 ```{r}
 rm(list = ls())
 getwd()
-setwd("~/GitHub/QB2017_Gibson/Week7-PhyloCom/")
+setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/Week7-PhyloCom/")
 
 package.list <- c('picante', 'ape', 'seqinr', 'vegan', 'fossil', 'simba')
 for (package in package.list){
@@ -99,21 +99,27 @@ Next, in the R code chunk below, do the following:
 
 ```{r}
 ponds.cons <- read.alignment(file = "./data/INPonds.final.rdp.1.rep.fasta", format = "fasta")
-ponds.cons$nam <- gsub("\\.*$", "", gsub("^.*?\t", "", ponds.cons$nam))
+ponds.cons$nam <- gsub("\\|.*$", "", gsub("^.*?\t", "", ponds.cons$nam))
 outgroup<- read.alignment(file = "./data/methanosarcina.fasta", format = "fasta")
 
 DNAbin <- rbind(as.DNAbin(outgroup), as.DNAbin(ponds.cons))
+
 image.DNAbin(DNAbin, show.labels=T, cex.lab = 0.05, las = 1)
 
 seq.dist.jc <- dist.dna(DNAbin, model = "JC", pairwise.deletion = F)
+
 phy.all <- bionj(seq.dist.jc)
-phy <- drop.tip(phy.all, phy.all$tip.label[!phy.all$tip.label %in% c(colnames(comm),"Methanosarcina")])
+
+phy <- drop.tip(phy.all, phy.all$tip.label[!phy.all$tip.label %in% 
+                                             c(colnames(comm), "Methanosarcina")])
 
 outgroup <- match("Methanosarcina", phy$tip.label)
+
 phy <- root(phy, outgroup, resolve.root = T)
-par(mar = c(1,1,2,1) + .1)
-plot.phylo(phy, main = "Neighbor Joining Tree", "phylogram", show.tip.label = F,
-           use.edge.length = F, direction = "right", cex=0.6,label.offset = 1)
+
+par(mar = c(1,1,2,1) + 0.1)
+plot.phylo(phy, main = "NJ TREE", "phylogram", show.tip.label = F,
+           use.edge.length = F, direction = "right", cex = 0.6, label.offset = 1)
 ```
 
 ## 4) PHYLOGENETIC ALPHA DIVERSITY
@@ -125,7 +131,7 @@ In the R code chunk below, do the following:
 ```{r}
 pd <- pd(comm, phy, include.root = F)
 
-
+pd
 
 ```
 
@@ -142,12 +148,12 @@ plot(log(pd$S), log(pd$PD),
      xlab = "ln(S)", ylab = "ln(PD)", cex.main = 1,
      main="Phylodiversity (PD) vs. Taxonomic richness (S)")
 
-fit <- lm('log(pd$pd$PD) ~ log(pd$S)')
+fit <- lm('log(pd$PD) ~ log(pd$S)')
 abline(fit, col = "red", lw= 2)
 exponent <- round(coefficients(fit)[2], 2)
 legend("topleft", legend=paste("Scaling exponent = ", exponent, sep = ""),
        bty = "n", lw = 2, col = "red")
-
+print(fit)
 
 
 ```
@@ -158,10 +164,10 @@ b.  Describe the relationship between taxonomic richness and phylodiversity.
 c.  When would you expect these two estimates of diversity to deviate from one another? 
 d.  Interpret the significance of the scaling PD-S scaling exponent.
 
-> ***Answer 1a***:  
-> ***Answer 1b***:  
-> ***Answer 1c***:  
-> ***Answer 1d***: 
+> ***Answer 1a***:  Because the presence of more species (higher richness) will necessarily lead to a larger sum of branch lengths. Even if the new species at a higher richness are closely related, there will have to be a positive (though small) increase in PD.
+> ***Answer 1b***:  It is linear and positive in the log scale. Slope = 0.75. 
+> ***Answer 1c***:  When there are very few highly diverged species at a site. Or when there are many very cloesly related species at a site.
+> ***Answer 1d***: It is not a 1:1 relationship. A unit increase in `S` is not met with a unit increase in `PD`. In the log scale, a 4 unit increase in `S` is met with a 3 unit increase in `PD`. One wouldn't expect it to be 1:1 since `PD` is affected by how closely related species at increasing richness are.
 
 **i. Randomizations and Null Models**  
 
@@ -172,7 +178,16 @@ In the R code chunk below, do the following:
 ses.pd <- ses.pd(comm[1:2,], phy, null.model = "richness", runs = 25,
                  include.root = F)
 
+ses.pd
 
+ses.pd.f <- ses.pd(comm[1:2, ], phy, null.model = "frequency", runs = 25,
+                   include.root = F)
+ses.pd.f
+
+ses.pd.p <- ses.pd(comm[1:2, ], phy, null.model = "sample.pool", runs = 25,
+                   include.root = F)
+
+ses.pd.p
 
 ```
 
@@ -181,8 +196,8 @@ ses.pd <- ses.pd(comm[1:2,], phy, null.model = "richness", runs = 25,
 a.  What are the null and alternative hypotheses you are testing via randomization when calculating `ses.pd`?
 b.  How did your choice of null model influence your observed ses.pd values?  Explain why this choice affected or did not affect the output. 
 
-> ***Answer 2a***:  
-> ***Answer 2b***:  
+> ***Answer 2a***:  Null: Observed `PD` is equal to `PD` obtained from a community dataset with randomized abundances within samples (but maintaining total site species richness). Alternative: Observed `PD` is not equal to the `PD` obtained through randomizations. /// The richness null model allows us to control for species richness in our tests. 
+> ***Answer 2b***:  The choice of model (as expected) did effect our estimates of standard effect size. Choosing a different randomization null model effected the `pd.rand.mean` and `pd.rand.sd` terms in the ses formula. (note that these are random, so my discussion here may not reflect the actual output of the functions once I re-knit this document for submission). The `frequency` null model resulted in observed standardized effect sizes of higher magnitude in both site commpared to the two other null models `richness` and `sample.pool`. `Richness` and `sample.pool` null models had similar effect sizes. No choice of null model effected our conclusions (at leat at alpha = 0.05). P-values for both sites using all null models were greater than .05. The choice of null model affected the output because in chosing different models, we are controlling for different things (richness with the `richness` model, species occurence frequency with the `frequency` model, and so on).
 
 ### B.  Phylogenetic Dispersion Within a Sample
 Another way to assess phylogenetic $\alpha$-diversity is to look at dispersion within a sample. 
@@ -206,10 +221,10 @@ In the R code chunk below, do the following:
 ses.mpd <- ses.mpd(comm, phydist, null.model = "taxa.labels",
                    abundance.weighted = F, runs = 25)
 
-NRI <- as.atrix(-1*((ses.mpd[,2] - ses.mpd[,3]) / ses.mpd[,4]))
+NRI <- as.matrix(-1*((ses.mpd[,2] - ses.mpd[,3]) / ses.mpd[,4]))
 rownames(NRI) <- row.names(ses.mpd)
 colnames(NRI) <- "NRI"
-
+NRI
 ```
 
 **iii.  Nearest Taxon Index (NTI)**
@@ -223,6 +238,25 @@ ses.mntd <- ses.mntd(comm, phydist, null.model = "taxa.labels",
 NTI <- as.matrix(-1 * ((ses.mntd[,2] - ses.mntd[,3]) / ses.mntd[,4]))
 rownames(NTI) <- row.names(ses.mntd)
 colnames(NTI) <- "NTI"
+NTI
+```
+
+
+```{r}
+ses.mpd <- ses.mpd(comm, phydist, null.model = "taxa.labels",
+                   abundance.weighted = T, runs = 25)
+
+NRI <- as.matrix(-1*((ses.mpd[,2] - ses.mpd[,3]) / ses.mpd[,4]))
+rownames(NRI) <- row.names(ses.mpd)
+colnames(NRI) <- "NRI"
+NRI
+
+ses.mntd <- ses.mntd(comm, phydist, null.model = "taxa.labels",
+                     abundance.weighted = T, runs = 25)
+NTI <- as.matrix(-1 * ((ses.mntd[,2] - ses.mntd[,3]) / ses.mntd[,4]))
+rownames(NTI) <- row.names(ses.mntd)
+colnames(NTI) <- "NTI"
+NTI
 
 ```
 
@@ -235,10 +269,10 @@ d. In the NRI and NTI examples above, the arguments "abundance.weighted = FALSE"
 Modify and rerun the code so that NRI and NTI are calculated using abundance data. 
 How does this affect the interpretation of NRI and NTI?
 
-> ***Answer 3a***:  
-> ***Answer 3b***:  
-> ***Answer 3c***:  
-> ***Answer 3d***:  
+> ***Answer 3a***:  We are finding the difference between the observed mean phylogenetic distance (MPD; average pairwise branch length between taxa in the sample) and the mean MPD generted from randomization of the data under a particular null model. This difference is divided by the standard deviation of the randomized data so that it is standardized and comparable. We can use the NRI to assess overdispersion vs. underdispersion (i.e. not clustered vs. clustered) of taxa at the site in question. 
+> ***Answer 3b***:  NTI is similar to NRI, but uses a different metric of distance (mean nearest phylogenetic neighbor distance (MNND) instead of MPD). MNND is the the mean distance separating each species in the sample from the species it is most closely related to. 
+> ***Answer 3c***:  Negative NRI values tell us that species in the site/sample are overdispersed (highly unrelated). For all but 1 sample (HNF187), values for NRI are negative. This indicates that sites contain more phylogenetically distant taxa than would be expected by chance. Values given by the NTI are interpreted the same way as NRI and, in general, show the same pattern. Most sites have negative values indicating overdispersion. Though importantly, multiple more sites have positive values for NTI (BC001, BCLO3, HNF267, YSF65, YSF66, and HNF269). Interestingly, the only site that showed a positive NRI value (HNF187), did not have a positive NTI value. This could be due to the fact that NTI emphasizes the clustering of taxa at the tips independent of how they cluster at deeper nodes. 
+> ***Answer 3d***:  If we weight nearest taxon distances by abundance, we are placing more emphasis on species with higher abundance. There could be a site dominated by a single species (that may otherwise have a very low pairwise or nearest taxon distance) be given an inappropriately high distance value and therefore overestimate NTI or NRI. This is probably why the default is FALSE. If one were to use this option, it would probably be a good idea to evaluate the data itself before drawing conclusions. Indeed, when calculating NRI and NTI weighting by abundance, the values are much higher (and positive) at all sites. In most cases, this flips our conclusions about the overdispersion of taxa at sites.
 
 ## 5) PHYLOGENETIC BETA DIVERSITY 
 
@@ -248,9 +282,9 @@ In the R code chunk below, do the following:
 2. calculate the phylogenetically based community resemblance matrix using UniFrac distance.
 
 ```{r}
-dist.mp <- condist(comm, phydist)
+dist.mp <- comdist(comm, phydist, abundance.weighted = F)
 dist.uf <- unifrac(comm, phy)
-
+mean(dist.uf)
 ```
 
 In the R code chunk below, do the following:  
@@ -264,9 +298,6 @@ plot(dist.mp, dist.uf,
 abline(b = 1, a = 0, lty = 2)
 text(0.5, 0.47, "1:1")
 
-
-
-
 ```
 
 ***Question 4***: 
@@ -277,9 +308,9 @@ Note: we are calculating unweighted phylogenetic distances (similar to incidence
 That means that we are not taking into account the abundance of each taxon in each site.
 c. Why might MPD show less variation than UniFrac?
 
-> ***Answer 4a***: 
-> ***Answer 4b***: 
-> ***Answer 4c***:
+> ***Answer 4a***: Mean pairwise distance is the average phylogenetic distance between species in site 1 and species in site 2. That is, we average over all pairwise distances between the two sites. With UniFrac, we calcuate two quantities: the sum of all unshared branches between samples and the sum of off all branch lengths in our tree. The Unifrac distance is then calculated as sum(unshared)/sum(total). If two sites contain no unshared branches, UniFrac equals 0 and the communities are identical. 
+> ***Answer 4b***: They are not related. The mean values for the two metrics are roughly the same. MPD is much less variable than UniFrac and the two metrics do not have a strong relationship, positive or otherwise.
+> ***Answer 4c***: Because with UniFrac, two sites could have anywhere from 0 to all but 2 unshared branches. Compared to the MPD which is an average and more or else equalizes, UniFrac will have a higher variance just based on how it is calculated. 
 
 
 ### B. Visualizing Phylogenetic Beta-Diversity
@@ -296,9 +327,10 @@ explainvar2 <- round(pond.pcoa$eig[2] / sum(pond.pcoa$eig), 3) * 100
 explainvar3 <- round(pond.pcoa$eig[3] / sum(pond.pcoa$eig), 3) * 100
 sum.eig <- sum(explainvar1, explainvar2, explainvar3)
 
-
-
-
+explainvar1
+explainvar2
+explainvar3
+sum.eig
 
 ```
 
@@ -312,14 +344,21 @@ In the R code chunk below, do the following:
 
 ```{r}
 
+par(mar = c(5,5,1,2) + 0.1)
+plot(pond.pcoa$points[ ,1], pond.pcoa$points[ ,2],
+     xlim = c(-0.2, 0.2), ylim = c(-.16, 0.16),
+              xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+              ylab = paste("PCoA 2 (", explainvar2,"%", sep = ""),
+              pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = F)
+axis(side  = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
 
-
-
-
-
-
-
-
+points(pond.pcoa$points[ ,1], pond.pcoa$points[ ,2],
+       pch = 19, cex = 3, bg = "gray", col = "gray")
+text(pond.pcoa$points[ ,1], pond.pcoa$points[ ,2],
+     labels = row.names(pond.pcoa$points))
 
 
 
@@ -329,9 +368,57 @@ In the following R code chunk:
 1. perform another PCoA on taxonomic data using an appropriate measure of dissimilarity, and
 2. calculate the explained variation on the first three PCoA axes. 
 
+```{r}
+library(BiodiversityR)
+comm.db <- vegdist(comm, method = "bray", diag = T)
+comm.pcoa <- cmdscale(comm.db, eig=T, k = 3)
+explainvar1 <- round(comm.pcoa$eig[1] / sum(comm.pcoa$eig), 3) * 100
+explainvar2 <- round(comm.pcoa$eig[2] / sum(comm.pcoa$eig), 3) * 100
+explainvar3 <- round(comm.pcoa$eig[3] / sum(comm.pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+#Variance explained by first axis
+explainvar1
+#variance explained by second axis
+explainvar2
+#variance explained by third axis
+explainvar3
+sum.eig
+
+par(mar = c(5, 5, 1, 2) + 0.1)
+
+plot(comm.pcoa$points[ ,1], comm.pcoa$points[ ,2], ylim = c(-0.2, 0.5), xlim = c(-.4, .7),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%", sep = ""),
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = F)
+
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+points(comm.pcoa$points[ ,1], comm.pcoa$points[ ,2],
+       pch = 19, cex = 3, bg = "gray", col = "gray")
+text(comm.pcoa$points[ ,1], comm.pcoa$points[ ,2],
+     labels = row.names(comm.pcoa$points))
+
+
+commREL <- comm
+  for(i in 1:nrow(comm)){
+    commREL[i, ] = comm[i, ]/ sum(comm[i, ])
+  }
+
+comm.pcoa <- add.spec.scores(comm.pcoa, commREL, method = "pcoa.scores")
+text(comm.pcoa$cproj[ ,1], comm.pcoa$cproj[ ,2],
+     labels = row.names(comm.pcoa$cproj), col = "black")
+
+
+```
+
+
 ***Question 5***: Using a combination of visualization tools and percent variation explained, how does the phylogenetically based ordination compare or contrast with the taxonomic ordination? What does this tell you about the importance of phylogenetic information in this system?
 
-> ***Answer 5***: 
+> ***Answer 5***: More variation was explained in the taxonomic ordination (axis 1: 28.4%, axis 2: 12%, axis 3: 8.6%) than in the phylogenetic ordination (axis 1: 9.5%, axis 2: 6%, axis 3: 5.4%). There is clear clustering of sites in the taxonomic ordination that is missing in the phylogenetic ordination. So, it would seem that, phylogenetically, the sites are all fairly similar. Although overall less variation was explained in the phylogenetic ordination, I would argue that phylogenetic information is very important in this system. Sites may differ taxonomically, but these differences are in taxa that are closely related. 
 
 ### C. Hypothesis Testing
 
@@ -341,9 +428,14 @@ In the R code chunk below, do the following:
 1. test the hypothesis that watershed has an effect on the phylogenetic diversity of bacterial communities.
 
 ```{r}
-
-
-
+watershed <- env$Location
+adonis(dist.uf ~ watershed, permutations = 999)
+adonis(
+  vegdist(
+    decostand(comm, method = "log"),
+    method = "bray") ~ watershed,
+  permutations = 999
+  )
 
 
 ```
@@ -355,6 +447,9 @@ In the R code chunk below, do the following:
 2. calculate environmental distance between ponds based on the Euclidean distance between sites in the environmental data matrix (after transforming and centering using `scale()`).
 
 ```{r}
+envs <- env[, 5:19]
+envs <- envs[, -which(names(envs) %in% c("TDS", "Salinity", "Cal_Volume"))]
+env.dist <- vegdist(scale(envs), method = "euclid")
 
 
 
@@ -365,6 +460,7 @@ In the R code chunk below, do the following:
 1. conduct a Mantel test to evaluate whether or not UniFrac distance is correlated with environmental variation.
 
 ```{r}
+mantel(dist.uf, env.dist)
 
 
 ```
@@ -377,21 +473,49 @@ In the R code chunk below, do the following:
 3. plot the dbRDA results
 
 ```{r}
+ponds.dbrda <- vegan::dbrda(dist.uf ~ ., data = as.data.frame(scale(envs)))
+anova(ponds.dbrda, by = "axis")
+ponds.fit <- envfit(ponds.dbrda, envs, perm = 999)
+ponds.fit
+
+dbrda.explainvar1 <- round(ponds.dbrda$CCA$eig[1]/
+                             sum(c(ponds.dbrda$CCA$eig, ponds.dbrda$CA$eig)), 3) * 100
+dbrda.explainvar2 <- round(ponds.dbrda$CCA$eig[2]/
+                             sum(c(ponds.dbrda$CCA$eig, ponds.dbrda$CA$eig)), 3) * 100
 
 
+par(mar = c(5,5,4,4) + 0.1)
+plot(scores(ponds.dbrda, display = "wa"), xlim = c(-2,2), ylim = c(-2,2),
+     xlab = paste("dbRDA 1 (", dbrda.explainvar1, "%)", sep = ""),
+     ylab = paste("dbRDA 2 (", dbrda.explainvar2, "%)", sep = ""),
+     pch= 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, 
+     axes = F)
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
 
+points(scores(ponds.dbrda, display = "wa"),
+       pch = 19, cex = 3, bg = "gray", col = "gray")
+text(scores(ponds.dbrda, display = "wa"),
+     labels = row.names(scores(ponds.dbrda, display = "wa")), cex = 0.5)
 
+vectors <- scores(ponds.dbrda, display = "bp")
 
+arrows(0,0, vectors[,1] * 2, vectors[, 2]* 2,
+       lwd = 2, lty = 1, length = 0.2, col = "red")
+text(vectors[,1] * 2, vectors[,2] *2, pos = 3,
+  labels = row.names(vectors))
 
-
-
-
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.2, las = 1, col = "red", lwd = 2.2,
+     at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[ ,1])))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.2, las = 1, col = "red", lwd = 2.2,
+     at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[ ,2])))
 
 ```
 
 ***Question 6***: Based on the multivariate procedures conducted above, describe the phylogenetic patterns of $\beta$-diversity for bacterial communities in the Indiana ponds.   
 
-> ***Answer 6***: 
+> ***Answer 6***: Based on a PERMANOVA, `watershed` has a significant effect on phylogenetic diversity (P = 0.026) of the bacterial communities as measured by UniFrac distance. The Mantel statistic for the correlation of UniFrac phylogenetic distance with environmental distance was 0.1604 which is significant (0.044) based on permutation tests. Based on the redundancy analysis, environmental variation effects phylogenetic distance between sites and using permutation tests, the environmental variables driving these effects are `Depth of pond`, `Oxidation-red potential`, `Temp`, `specific water conductivity`, `pH`, `chlorophyll a concentration`. 
 
 ## 6) SPATIAL PHYLOGENETIC COMMUNITY ECOLOGY
 
@@ -407,12 +531,20 @@ In the R code chunk below, do the following:
 
 ```{r}
 
+long.lat <- as.matrix(cbind(env$long, env$lat))
+coord.dist <- earth.dist(long.lat, dist = T)
+bray.curtis.dist <- 1 - vegdist(comm)
 
+unifrac.dist <- 1 - dist.uf
 
+unifrac.dist.ls <- liste(unifrac.dist, entry = "unifrac")
+bray.curtis.dist.ls <- liste(bray.curtis.dist, entry = "bray.curtis")
+coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
+env.dist.ls <- liste(env.dist, entry = "env.dist")
 
-
-
-
+df <- data.frame(coord.dist.ls, bray.curtis.dist.ls[, 3], unifrac.dist.ls[, 3],
+                 env.dist.ls[, 3])
+names(df)[4:6] <- c("bray.curtis", "unifrac", "env.dist")
 
 
 ```
@@ -424,13 +556,27 @@ In the R code chunk below, do the following:
 3. add trend lines to each.
 
 ```{r}
+par(mfrow=c(2,1), mar = c(1,5,2,1) + 0.1, oma = c(2, 0,0,0))
 
+plot(df$geo.dist, df$bray.curtis, xlab = "", xaxt = "n", las = 1, ylim = c(0.1, 0.9),
+     ylab = "Bray-Curtis Similarity",
+     main = "distance decay", col = "SteelBlue")
 
+DD.reg.bc <- lm(df$bray.curtis ~ df$geo.dist)
+summary(DD.reg.bc)
+abline(DD.reg.bc, col = "red4", lwd = 2)
 
+par(mar = c(2, 5, 1, 1) + .1)
 
+plot(df$geo.dist, df$unifrac, xlab = "", las = 1, ylim = c(0.1, 0.9),
+     ylab = "Unifrac Similarity", col = "darkorchid4")
 
+DD.reg.uni <- lm(df$unifrac ~ df$geo.dist)
+summary(DD.reg.uni)
+abline(DD.reg.uni, col = "red4", lwd = 2)
 
-
+mtext("Geographic Distance (km)", side = 1, adj = 0.55,
+      line = 0.5, outer = T)
 
 
 ```
@@ -438,14 +584,14 @@ In the R code chunk below, do the following:
 In the R code chunk below, test if the trend lines in the above distance decay relationships are different from one another.
 
 ```{r}
-
+diffslope(df$geo.dist, df$unifrac, df$geo.dist, df$bray.curtis)
 
 
 ```
 
 ***Question 7***: Interpret the slopes from the taxonomic and phylogenetic DD relationships. If there are differences, hypothesize why this might be.   
 
-> ***Answer 7***: 
+> ***Answer 7***: The slopes are slightly different (0.001603) and this difference is significant (0.002). The distance decay curve slope based on Bray-Curtis similarity is -.001 (P = 0.026) while the distance decay based on phylogenetic distance is 0.00029 (P = 0.07). Based on these analyses, there does not appear to be a phylogenetic signal in variation in diversity across space. Consequently, one might infer that evolutionary events such as adaptive radiations or ecological speciation are not likely to have occured. Rather, species at sites separated by a large amount of space are roughly equally related to those nearby. This could mean that the radiation of these populations occured very recently and they have not have time to diverge or the process by which they were dispersed resulted in the placement of related populations across the landscape. 
 
 
 ### B. Phylogenetic diversity-area relationship (PDAR)
@@ -455,11 +601,39 @@ In the R code chunk below, test if the trend lines in the above distance decay r
 In the R code chunk below, write a function to generate the PDAR.
 
 ```{r}
-
-
-
-
-
+PDAR <- function(comm, tree){
+  
+  areas <- c()
+  diversity <- c()
+  
+  num.plots <- c(2, 4, 8, 16, 32, 51)
+  
+  for (i in num.plots){
+    areas.iter <- c()
+    diversity.iter <- c()
+    
+    for (j in 1:10){
+      pond.sample <- sample(51, replace = F, size = i)
+      
+      area <- 0
+      sites <- c()
+      
+      for (k in pond.sample){
+        area <- area + pond.areas[k]
+        sites <- rbind(sites, comm[k, ])
+      }
+      
+      areas.iter <- c(areas.iter, area)
+      psv.vals <- psv(sites, tree, compute.var = F)
+      psv <- psv.vals$PSVs[1]
+      diversity.iter <- c(diversity.iter, as.numeric(psv))
+    }
+    diversity <- c(diversity, mean(diversity.iter))
+    areas <- c(areas, mean(areas.iter))
+    print(c(i, mean(diversity.iter), mean(areas.iter)))
+  }
+  return(cbind(areas, diversity))
+}
 
 
 
@@ -476,20 +650,51 @@ In the R code chunk below, do the following:
 5. customize the PDAR plot. 
 
 ```{r}
+pond.areas <- as.vector(pi * (env$Diameter/2)^2)
+
+#Could not recreate plot in handout......
+
+#S.obs <- function(x = ""){
+#  rowSums(x > 0) * 1
+#    }
+
+#richness <- S.obs(comm)#
+
+#results <- lm(log(richness) ~ pond.areas)
+#plot(pond.areas, log(richness), col="dark red", pch=20, cex=2,
+#     main="Species-area relationship",
+#     xlab='ln(Area)', ylab='ln(Richness)')
+#abline(results)
 
 
+pdar <- PDAR(comm, phy)
+pdar <- as.data.frame(pdar)
+pdar$areas <- sqrt(pdar$areas)
 
+Pearson <- cor.test(pdar$areas, pdar$diversity, method = "pearson")
+P <- round(Pearson$estimate, 2)
+P.pval <- round(Pearson$p.value, 3)
 
+Spearman <- cor.test(pdar$areas, pdar$diversity, method = "spearman")
+rho <- round(Spearman$estimate, 2)
+rho.pval <- round(Spearman$p.value, 3)
 
+plot.new()
+par(mfrow=c(1,1), mar = c(1,5,2,1) + 0.1, oma = c(2,0,0,0))
+plot(pdar[,1], pdar[,2], xlab = "Area", ylab = "PSV", ylim = c(0,1),
+     col = "red", pch = 16, las = 1)
 
-
+legend("topleft", legend = c(paste("Spearman Correlation = ", rho, "; p = ", rho.pval, sep = ""),
+                             paste("Pearson Correlation = ", P, "; p =", P.pval, sep = "")))
 ```
 
 ***Question 8***: Compare your observations of the microbial PDAR and SAR in the Indiana ponds?
 How might you explain the differences between the taxonomic (SAR) and phylogenetic (PDAR)?  
 
-> ***Answer 8***: 
+> ***Answer 8***: There is no correlation between phylogenetic diversity (as measured by PSV) and area (Spearman P = 0.242, Pearson P = 0.663). This is in contrast to the species-area relationship of richness vs. area which showed a positive relationship (slope = 0.144). As we sample larger areas, we will likely encounter more taxa (SAR) but these taxa need not mean we increase in evolutionary distance as the new species encountered could be very closely related to the current set of species! So as pond area increases, species richness will increase. But if newly encountered species are closely related to the existing set, we will not see a corresponding pattern in the PDAR. 
 
 ## SYNTHESIS
 
 Ignoring technical or methodological constraints, discuss how phylogenetic information could be useful in your own research. Specifically, what kinds of phylogenetic data would you need? How could you use it to answer important questions in your field? In your response, feel free to consider not only phylogenetic approaches related to phylogenetic community ecology, but also those we discussed last week in the PhyloTraits module, or any other concepts that we have not covered in this course.
+
+> ***Synthesis***: Most species of tomato are very closely related but nonetheless display tremendous functional diversity. Phylogenetics has played a key role in studying the evolution of self-compatibility (the ability to self pollinate) in the tomato section of Solanum. I am interested in studying the distribution of adaptive traits across climatic and environmental gradients and in identifying the loci responsible for local adaptation, adaptive divergence, and ultimately speciation. Phylogenetics could play a key roll in understanding the evolution of adaptive traits such as salt tolerance, drought tolerance, and herbivore response. If multiple taxa display strong salt tolerance, for example, did this independently evolve multiple times (convergent evolution) or is it likely that this trait evolved in a common ancestor of all the salt-tolerant taxa? To do this, independent contrasts needs to be made. Similarly, I could ask how salt tolerance is related to local salt concentrations by performing a phylogenetic regression to account for shared evolutionary history. To answer these questions, I would need sequence data from the taxa of interests, phenotype data (degree of salt tolerance), and local salt concentration data from the field. 
