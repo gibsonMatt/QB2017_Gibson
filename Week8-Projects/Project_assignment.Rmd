@@ -1,8 +1,9 @@
 ---
 title: "Add title of your project"
 author: "Alison Partee and Matt Gibson, Quantitative Biodiversity, Indiana University"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: pdf_document
+output:
+  html_document: default
+  pdf_document: default
 geometry: margin=2.54cm
 ---
 
@@ -26,7 +27,8 @@ geometry: margin=2.54cm
 
 ## 2) SETUP
 
-```{r}
+```{r, echo = F}
+#date: '`r format(Sys.time(), ''%d %B, %Y'')`'
 
 rm(list=ls())
 getwd()
