@@ -1,6 +1,6 @@
 ---
 title: "Add title of your project"
-author: "Add names of team members, Quantitative Biodiversity, Indiana University"
+author: "Alison Partee and Matt Gibson, Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -28,6 +28,25 @@ geometry: margin=2.54cm
 
 ```{r}
 
+rm(list=ls())
+getwd()
+setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/Week3-Beta")
+
+
+package.list <- c('vegan', 'ade4', 'viridis', 'gplots', 'BiodiversityR', 'indicspecies')
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)){
+    install.packages(package)
+    library(package, character.only=T)
+  }
+}
+package.list <- c('vegan', 'sp', 'gstat','raster', 'RgoogleMaps', 'maptools', 'rgdal',
+                  'simba', 'gplots', 'rgeos', 'rgdal', "SoDA")
+for (p in package.list){
+  library(p, character.only = T)
+  #install.packages(p)
+}
+
 ```
 
 ## 3) DESCRIPTION OF DATA
@@ -36,13 +55,443 @@ geometry: margin=2.54cm
 
 ```{r}
 
+setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/project")
+
+myData <- read.table("speciesdata_clean.csv", sep=",", header=T, row.names = 1)
+envData <- read.table("environmentaldata(1).csv", sep=",", header=T, row.names = 1)
+
+
+##DATA TRANSFORMATIONS
+envData$Topsoil.pH <- (1/(10^envData$Topsoil.pH))
+envData$Subsoil.pH <- (1/(10^envData$Subsoil.pH))
+envData$Topsoil.Ca <- log(envData$Topsoil.Ca+.01)
+envData$Topsoil.Mg <- log(envData$Topsoil.Mg+.01)
+envData$Topsoil.Mn <- log(envData$Topsoil.Mn+.01)
+envData$Topsoil.Zn <- log(envData$Topsoil.Zn+.1)
+envData$Topsoil.NO3 <- log(envData$Topsoil.NO3+.01)
+envData$Topsoil.Ca <- log(envData$Topsoil.Ca+.01)
+envData$Topsoil.N <- log(envData$Topsoil.N+.01)
+envData$Topsoil.Fe <- log(envData$Topsoil.Fe+.01)
+envData$Topsoil.Al <- log(envData$Topsoil.Al+.01)
+
+
 
 ```
 
 ## 5) ANALYSIS: FIGURES AND STATISTICS
 
 ```{r}
+#PLOT OF SITES
 
+library(rworldmap)
+newmap <- getMap(resolution="low")
+#plot(newmap)
+plot(newmap, xlim = c(-10, 20), ylim = c(40, 60), asp = 1, main="Map of sites")
+
+points(envData$Latitude, envData$Longitude, col = "red", cex = .6)
+
+S.obs <- function(x = ""){
+  rowSums(x > 0) * 1
+}
+
+C <- function(x = ""){
+  1 - (sum(x == 1) / rowSums(x))
+}
+d<- dim(myData)
+
+##########################################################################################
+#CALCULATE RICHNESS AND COVERAGE AT ALL SITES
+s <- seq(2, d[1])
+richness <- S.obs(myData[1, 4:ncol(myData)])
+coverage <- C(myData[1, 4:ncol(myData)])
+for (i in s) {
+  coverage <- rbind(coverage, C(myData[i, 4:ncol(myData)]))
+  richness <- rbind(richness, S.obs(myData[i, 4:ncol(myData)]))
+}
+```
+
+
+#####Correlations of environmental variables with richness
+```{r}
+##########################################################################################
+#CORRELATIONS OF ENVIRONMENTAL VARIABLES WITH RICHNESS
+
+#Remove plant chemical measurements
+envData_reduced <- envData[, 1:23]
+#Remove categorical variables
+envData_reduced <- subset(envData_reduced, select=-c(Mangement.type, Grazing.intensity))
+#Remove country and year
+envData_reduced <- subset(envData_reduced, select=-c(Country, Survey.year))
+
+bigFrame <- cbind(as.numeric(richness), envData_reduced[, 3:ncol(envData_reduced)])
+colnames(bigFrame) <- c("richness", "Altitude", "Inclination", "vegetation.height", "Soil.depth", "Topsoil.pH",           "Subsoil.pH",          
+ "Topsoil.Al",           "Topsoil.Ca",           "Topsoil.Fe",           "Topsoil.Mg",          
+"Topsoil.Mn",           "Topsoil.Zn",           "Topsoil.NO3",          "Topsoil.NH4",         
+"Topsoil.Olsen.P",      "Topsoil.C",            "Topsoil.N")
+bigFrame2 <- cbind(as.numeric(richness), subset(envData, select= c(Mangement.type, Grazing.intensity, Country)))
+colnames(bigFrame2) <- c("richness", "m.type", "g.type", "country")
+#pairs(bigFrame)
+cor1 <- cor(bigFrame)
+par(mfrow=c(1,1))
+library(psych)
+cor2 <- corr.test(bigFrame, method="pearson", adjust="BH")
+
+#CORRELATIONS OF ENV VARIABLES WITH RICHNESS
+cor2$r[,1]
+
+```
+
+#####Plots of richness vs. various environmental variables
+```{r, fig.width=8, fig.height=8}
+##########################################################################################
+#PLOT OF ENV VARIABLES VS RICHNESS
+
+par(mfrow=c(2,2))
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.pH), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.pH, bigFrame$richness, ylab = "Richness", xlab = "[H+]", main="Richness vs. \n Hydrogen Ion Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = .00015, y = 50, labels = mylabel, cex=.9)
+abline(model1)
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Ca), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.Ca, bigFrame$richness, ylab = "Richness", xlab = "Calcium", main = "Richness vs.\n Calcium Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = 1, y = 50, labels = mylabel, cex=.9)
+abline(model1)
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Mg), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.Mg, bigFrame$richness, ylab = "Richness", xlab = "Magnesium",main = "Richness vs. \n Magnesium Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = 6, y = 50, labels = mylabel, cex=.9)
+abline(model1)
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Mn), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.Mn, bigFrame$richness, ylab = "Richness", xlab = "Manganese",main = "Richness vs. \n Manganese Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = .00015, y = 55, labels = mylabel, cex=.9)
+abline(model1)
+
+par(mfrow=c(2,2))
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Zn), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.Zn, bigFrame$richness, ylab = "Richness", xlab = "Zinc",main = "Richness vs. \n Zinc Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = 3, y = 55, labels = mylabel, cex=.9)
+abline(model1)
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.NO3), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.NO3, bigFrame$richness, ylab = "Richness", xlab = "Nitrates",main = "Richness vs. \n Nitrate Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = -2, y = 54, labels = mylabel, cex=.9)
+abline(model1)
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.N), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.N, bigFrame$richness, ylab = "Richness", xlab = "Nitrogen",main = "Richness vs. \n Nitrogen Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = 2, y = 55, labels = mylabel, cex=.9)
+abline(model1)
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Fe), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.Fe, bigFrame$richness, ylab = "Richness", xlab = "Iron",main = "Richness vs. \n Iron Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = 2, y = 55, labels = mylabel, cex=.9)
+abline(model1)
+
+par(mfrow=c(2,2))
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Al), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.Al, bigFrame$richness, ylab = "Richness", xlab = "Aluminium",main = "Richness vs. \n Aluminium Concentration")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = 6, y = 53, labels = mylabel, cex=.9)
+abline(model1)
+
+model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Olsen.P), data=bigFrame)
+print(s <- summary(model1))
+plot(bigFrame$Topsoil.Olsen.P, bigFrame$richness, ylab = "Richness", xlab = "Olsen Phos.",main = "Richness vs. \n Olsen Phosphorus")
+mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
+text(x = 60, y = 50, labels = mylabel, cex=.9)
+abline(model1)
+
+
+```
+
+#####Plots of mean chemical composition by country
+```{r}
+
+
+
+```
+
+
+#####Ordination of taxonomic diversity
+```{r, fig.width=8, fig.height=8}
+par(mfrow=c(1,1))
+
+myData <- myData[, 4:ncol(myData)]
+spec.bray <- vegdist(myData, method = "bray")
+
+spec.pcoa <- cmdscale(spec.bray, eig=T, k=3)
+explainvar1 <- round(spec.pcoa$eig[1] / sum(spec.pcoa$eig), 3) * 100
+explainvar2 <- round(spec.pcoa$eig[2] / sum(spec.pcoa$eig), 3) * 100
+explainvar3 <- round(spec.pcoa$eig[3] / sum(spec.pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+#Variance explained by first axis
+explainvar1
+#variance explained by second axis
+explainvar2
+#variance explained by third axis
+explainvar3
+sum.eig
+
+par(mar = c(5, 5, 1, 2) + 0.1)
+
+plot(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2], ylim = c(-0.6, 0.45),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""),
+     main = "Taxonomic Ordination",
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = F)
+
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+
+
+
+data2 <- as.data.frame(spec.pcoa$points)
+data2$cun <- substr(row.names(data2),1,2)
+fr <- data2[which(data2$cun == "FR"),]
+nw <- data2[which(data2$cun == "NW"),]
+be <- data2[which(data2$cun == "BE"),]
+nl <- data2[which(data2$cun == "NL"),]
+dk <- data2[which(data2$cun == "DK"),]
+ge <- data2[which(data2$cun == "GE"),]
+se <- data2[which(data2$cun == "SE"),]
+uk <- data2[which(data2$cun == "UK"),]
+
+
+points(fr[,1], fr[,2] ,pch=19, cex=2, bg="red", col="red")
+points(nw[,1], nw[,2],pch=19, cex=2, bg="blue", col="blue")
+points(be[,1], be[,2],pch=19, cex=2, bg="chartreuse2", col="chartreuse2")
+points(nl[,1], nl[,2],pch=19, cex=2, bg="darkgoldenrod1", col="darkgoldenrod1")
+points(dk[,1], dk[,2],pch=19, cex=2, bg="darkgray", col="darkgray")
+points(ge[,1], ge[,2],pch=19, cex=2, bg="darkorange1", col="darkorange1")
+points(se[,1], se[,2],pch=19, cex=2, bg="darksalmon", col="darksalmon")
+points(uk[,1], uk[,2],pch=19, cex=2, bg="darkviolet", col="darkviolet")
+
+legend(.4,-.3,c("FR","NW", "BE", "NL", "DK", "GE", "SE", "UK"), cex = .7, col=c("red", "blue", "chartreuse2", "darkgoldenrod1",
+                                                                   "darkgray", "darkorange1", "darksalmon", "darkviolet"), fill =c("red", "blue", "chartreuse2", "darkgoldenrod1","darkgray", "darkorange1", "darksalmon", "darkviolet") )
+#I plotted just the country code...full site names were too long
+#(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2],
+#       pch = 19, cex = 3, bg = "gray", col = "gray")
+#text(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2],
+#     labels = substr(row.names(spec.pcoa$points),1,2))
+
+specREL <- myData
+  for(i in 1:nrow(myData)){
+    specREL[i, ] = myData[i, ]/ sum(myData[i, ])
+  }
+
+spec.pcoa <- add.spec.scores(spec.pcoa, specREL, method = "pcoa.scores")
+par(mfrow=c(1,1))
+#Is just a mess.........
+#text(spec.pcoa$cproj[ ,1], spec.pcoa$cproj[ ,2],
+#     labels = row.names(spec.pcoa$cproj), col = "black")
+
+
+spe.corr <- add.spec.scores(spec.pcoa, specREL, method = "cor.scores")$cproj
+corrcut <- 0.8
+imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+
+#As expected, this takes quite a long time...
+
+fit <- envfit(spec.pcoa, specREL, perm = 999)
+fit
+
+```
+
+
+
+#####Constrained Ordination
+```{r, fig.width=8, fig.height=8}
+#Isolating the environmental chemical data (removing categorical variables and other plant chemical measurements)
+env.chem <- na.omit(envData_reduced[, 7:19])
+env.chem <- as.matrix(env.chem)
+#is.na(env.chem) <- do.call(cbind,lapply(env.chem, is.infinite))
+
+###REMOVING SITES WITH MISSING DATA
+myData <- myData[rownames(myData) != "GE712", ]
+myData <- myData[rownames(myData) != "GE713", ]
+myData <- myData[rownames(myData) != "GE715", ]
+
+spec.db <- vegdist(myData, method = "bray", diag=T)
+eu.dbrda <- dbrda(spec.db ~ ., as.data.frame(env.chem), na.action=na.omit)
+#ordiplot(eu.dbrda)
+eu.dbrda.mod0 <- dbrda(spec.db ~ 1, as.data.frame(env.chem), na.action=na.omit)
+
+#ordiplot(eu.dbrda.mod0)
+eu.dbrda.mod1 <- dbrda(spec.db ~ ., as.data.frame(env.chem), na.action=na.omit)
+#Model selection
+eu.dbrda <- ordiR2step(eu.dbrda.mod0, eu.dbrda.mod1, perm.max= 200)
+
+eu.dbrda$call
+eu.dbrda$anova
+ordiplot(eu.dbrda)
+par(mfrow=c(1,1))
+
+#3. use a permutation test to determine the significance of the constrained analysis,
+permutest(eu.dbrda, permutations = 999)
+#4 use a permutation test to determine the correlation of each environmental factor on the constrained axes,
+envfit(eu.dbrda, env.chem[,c(1,3,4,5,6,7,9,12,13)], perm = 999)
+
+#5
+dbrda.explainvar1 <- round(eu.dbrda$CCA$eig[1] /
+                             sum(c(eu.dbrda$CCA$eig, eu.dbrda$CA$eig)), 3) * 100
+dbrda.explainvar2 <- round(eu.dbrda$CCA$eig[2] /
+                             sum(c(eu.dbrda$CCA$eig, eu.dbrda$CA$eig)), 3) * 100
+dbrda.explainvar1
+dbrda.explainvar2
+#6
+par(mar = c(5, 5, 4, 4) + 0.1)
+
+plot(scores(eu.dbrda, display = "wa"), xlim = c(-1.5, 2.2), ylim = c(-2.4, 2.5),
+xlab = paste("dbRDA 1 (", dbrda.explainvar1, "%)", sep = ""),
+ylab = paste("dbRDA 2 (", dbrda.explainvar2, "%)", sep = ""),
+pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
+
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+data <- as.data.frame(scores(eu.dbrda)$sites)
+data$cun <- substr(row.names(data),1,2)
+fr <- data[which(data$cun == "FR"),]
+nw <- data[which(data$cun == "NW"),]
+be <- data[which(data$cun == "BE"),]
+nl <- data[which(data$cun == "NL"),]
+dk <- data[which(data$cun == "DK"),]
+ge <- data[which(data$cun == "GE"),]
+se <- data[which(data$cun == "SE"),]
+uk <- data[which(data$cun == "UK"),]
+
+points(fr$dbRDA1, fr$dbRDA2,pch=19, cex=2, bg="red", col="red")
+points(nw$dbRDA1, nw$dbRDA2,pch=19, cex=2, bg="blue", col="blue")
+points(be$dbRDA1, be$dbRDA2,pch=19, cex=2, bg="chartreuse2", col="chartreuse2")
+points(nl$dbRDA1, nl$dbRDA2,pch=19, cex=2, bg="darkgoldenrod1", col="darkgoldenrod1")
+points(dk$dbRDA1, dk$dbRDA2,pch=19, cex=2, bg="darkgray", col="darkgray")
+points(ge$dbRDA1, ge$dbRDA2,pch=19, cex=2, bg="darkorange1", col="darkorange1")
+points(se$dbRDA1, se$dbRDA2,pch=19, cex=2, bg="darksalmon", col="darksalmon")
+points(uk$dbRDA1, uk$dbRDA2,pch=19, cex=2, bg="darkviolet", col="darkviolet")
+
+legend(1.5,2.3,c("FR","NW", "BE", "NL", "DK", "GE", "SE", "UK"), cex = .7, col=c("red", "blue", "chartreuse2", "darkgoldenrod1",
+                                                                   "darkgray", "darkorange1", "darksalmon", "darkviolet"), fill =c("red", "blue", "chartreuse2", "darkgoldenrod1","darkgray", "darkorange1", "darksalmon", "darkviolet") )
+#text(scores(eu.dbrda, display = "wa"),
+ # labels = substr(row.names(scores(eu.dbrda, display = "wa")),1,2))
+
+vectors <- scores(eu.dbrda, display = "bp")
+
+#row.names(vectors) <- c("pH", "har", "pho", "nit", "amm", "oxy", "bdo")
+
+arrows(0, 0, vectors[,1], vectors[, 2],
+  lwd = 2, lty = 1, length = 0.2, col = "red")
+text(vectors[,1], vectors[, 2], pos = 3,
+  labels = row.names(vectors))
+
+axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
+at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
+axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
+at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
+
+par(mfrow=c(1,1))
+
+```
+
+####Variance Partitioning
+```{r, fig.width=8, fig.height=8}
+#Remove plant measurements
+envData_reduced <- envData[, 1:23]
+#Remove categorical variables
+envData_reduced <- subset(envData_reduced, select=-c(Mangement.type, Grazing.intensity))
+#Remove country and year
+envData_reduced <- subset(envData_reduced, select=-c(Country, Survey.year))
+envData_reduced <- envData_reduced[rownames(envData_reduced) != "GE712", ]
+envData_reduced <- envData_reduced[rownames(envData_reduced) != "GE713", ]
+envData_reduced <- envData_reduced[rownames(envData_reduced) != "GE715", ]
+#Remove unneeded data
+myData <- myData[, 4:ncol(myData)]
+XY_soda <- as.data.frame(geoXY(envData_reduced$Latitude, envData_reduced$Longitude))
+#XY_soda <- cbind(row.names((envData_reduced)), XY_soda)
+#colnames(XY_soda) <- c("site", "X", "Y")
+#Begin DISTANCE DECAY CODE
+xy <- data.frame(site.name = row.names(envData_reduced), lats = envData_reduced$Latitude, lons = envData_reduced$Longitude)
+#coordinates(xy) <- ~lats+lons
+comm.dist <- 1 - vegdist(myData)
+#proj4string(xy) <- CRS("+proj=longlat +datum=NAD83")
+#UTM <- spTransform(xy, CRS("+proj=utm + zone=51 ellps=WGS84"))
+#UTM <- as.data.frame(UTM)
+xy$lats_utm <- XY_soda$Y
+xy$lons_utm <- XY_soda$X
+
+lats <- XY_soda$Y
+lons <- XY_soda$X
+
+# 3) Calculate geographic distance between plots and assign to the variable 'coord.dist'
+coord.dist <- dist(as.matrix(lats, lons))
+
+par(mfrow=c(1,1))
+
+eu.dbrda$anova
+
+env.mod <- model.matrix(~ Topsoil.pH + Topsoil.Ca + Topsoil.Mn + Topsoil.C + Topsoil.NO3 + Topsoil.N + Topsoil.Zn + Topsoil.Al , as.data.frame(env.chem))[,-1]
+rs <- rowSums(myData)/sum(myData)
+xy <- as.data.frame(xy)
+coord.mat <- as.matrix(xy[,4:5])
+
+doubs.pcnmw <- pcnm(dist(coord.mat), w = rs, dist.ret = T)
+doubs.pcnmw$values > 0
+
+doubs.space <- as.data.frame(scores(doubs.pcnmw))
+doubs.pcnm.mod0 <- dbrda(spec.db ~ 1, doubs.space)
+doubs.pcnm.mod1 <- dbrda(spec.db ~ ., doubs.space)
+step.pcnm <- ordiR2step(doubs.pcnm.mod0, doubs.pcnm.mod1, perm.max = 200)
+
+plot(step.pcnm)
+
+step.pcnm$anova
+
+space.mod <- model.matrix(~ PCNM1 + PCNM3 + PCNM2 + PCNM6 + PCNM4 + PCNM9 + PCNM7 + PCNM11 + PCNM8 + PCNM5, doubs.space)[,-1]
+
+doubs.total.env <- dbrda(spec.db ~ env.mod)
+doubs.total.space <- dbrda(spec.db ~ space.mod)
+doubs.env.cond.space <- dbrda(spec.db ~ env.mod + Condition(space.mod))
+doubs.space.cond.env <- dbrda(spec.db ~ space.mod + Condition(space.mod))
+
+permutest(doubs.env.cond.space, permutations = 999)
+permutest(doubs.space.cond.env, permutations = 999)
+permutest(doubs.total.env, permutations = 999)
+permutest(doubs.total.space, permutations = 999)
+
+doubs.varpart <- varpart(spec.db, env.mod, space.mod)
+doubs.varpart
+
+par(mar = c(2,2,2,2))
+plot(doubs.varpart, col ="red", cex = 1.5)
+text(1, 0.25, "Space")
+text(0, 0.25, "Env")
+mtext("Variation partitioning of \nEuropean Plant Diversity", side = 3, line = -3)
 
 ```
 

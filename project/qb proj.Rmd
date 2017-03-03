@@ -1,0 +1,193 @@
+---
+title: "qb proj bar plots"
+author: "alison partee"
+date: "2/16/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+ 
+#load and transform data
+speciesdata <- read.table("/Users/flopsei/GitHub/QB2017_Partee/speciesdata_clean.csv", sep = ",", header = TRUE)
+envdata <- read.table("/Users/flopsei/GitHub/QB2017_Partee/environmentaldata.csv", sep = ",", header = TRUE)
+envdata <- envdata[1:153,]
+
+#data frames
+speciesdatafr <- speciesdata[,5:dim(speciesdata)[2]]
+row.names(speciesdatafr) <- speciesdata$Site.number
+speciesdatafr <- speciesdatafr[order(speciesdata$Site.number),]
+
+envdatafr <- envdata[,8:24]
+row.names(envdatafr) <- envdata$Site.no.
+envdatafr <- envdatafr[order(envdata$Site.no.),]
+
+#as matrix
+speciesdatamat <- as.matrix(speciesdatafr)
+envdatamat <- as.matrix(envdatafr)
+
+speciesnames <- colnames(speciesdatamat)
+
+# this is the ordered env data including country, year, and coodinates
+envordered <- envdata[order(envdata$Site.no.),]
+row.names(envordered) <- envdata$Site.no.[order(envdata$Site.no.)]
+
+envord.tbl <- dplyr::tbl_df(envordered)
+
+```
+
+
+```{r}
+
+# making a bar plot of pH by country
+
+#barplot for topsoil ph
+france.tph <- envordered$Topsoil.pH[envordered$Country == 'France']
+belgium.tph <- envordered$Topsoil.pH[envordered$Country == 'Belgium']
+denmark.tph <- envordered$Topsoil.pH[envordered$Country == 'Denmark']
+germany.tph <- envordered$Topsoil.pH[envordered$Country == 'Germany']
+nether.tph <- envordered$Topsoil.pH[envordered$Country == 'Netherlands']
+norway.tph <- envordered$Topsoil.pH[envordered$Country == 'Norway']
+sweden.tph <- envordered$Topsoil.pH[envordered$Country == 'Sweden']
+britain.tph <- envordered$Topsoil.pH[envordered$Country == 'Great Britain']
+ireland.tph <- envordered$Topsoil.pH[envordered$Country == 'Ireland']
+
+cmeans <- c(mean(belgium.tph), mean(denmark.tph), mean(france.tph), mean(germany.tph), mean(britain.tph), mean(ireland.tph), mean(nether.tph), mean(norway.tph), mean(sweden.tph))
+
+
+sem <- function(x){
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
+
+csem <- tapply(envdata$Topsoil.pH, envdata$Country, sem)
+csem <- as.data.frame(csem)[c(2:7,9:11),]
+
+
+# cnames <- c('Belgium', 'Denmark', 'France', 'Germany', 'Great Britain', 'Ireland', 'Netherlands', 'Norway', 'Sweden')
+cnames <- rownames(as.data.frame(csem))
+
+bp2 <- barplot(cmeans, names.arg = cnames, ylab = 'Mean pH', main = 'Average Topsoil pH by Country', las = 2, ylim = c(3.5, 5.5), xpd = FALSE, cex.names = .8)
+
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans - csem, angle = 90, length = 0.1, 
+       lwd = 1)
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans + csem, angle = 90, length = 0.1, 
+       lwd = 1)
+
+```
+
+
+```{r}
+
+# making a bar plot of pH by country
+
+#barplot for topsoil ph
+france.tca <- envordered$Topsoil.Ca[envordered$Country == 'France']
+belgium.tca <- envordered$Topsoil.Ca[envordered$Country == 'Belgium']
+denmark.tca <- envordered$Topsoil.Ca[envordered$Country == 'Denmark']
+germany.tca <- envordered$Topsoil.Ca[envordered$Country == 'Germany']
+nether.tca <- envordered$Topsoil.Ca[envordered$Country == 'Netherlands']
+norway.tca <- envordered$Topsoil.Ca[envordered$Country == 'Norway']
+sweden.tca <- envordered$Topsoil.Ca[envordered$Country == 'Sweden']
+britain.tca <- envordered$Topsoil.Ca[envordered$Country == 'Great Britain']
+ireland.tca <- envordered$Topsoil.Ca[envordered$Country == 'Ireland']
+
+cmeans <- c(mean(belgium.tca), mean(denmark.tca), mean(france.tca), mean(germany.tca), mean(britain.tca), mean(ireland.tca), mean(nether.tca), mean(norway.tca), mean(sweden.tca))
+
+
+sem <- function(x){
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
+
+csem <- tapply(envdata$Topsoil.Ca, envdata$Country, sem)
+csem <- as.data.frame(csem)[c(2:7,9:11),]
+
+
+# cnames <- c('Belgium', 'Denmark', 'France', 'Germany', 'Great Britain', 'Ireland', 'Netherlands', 'Norway', 'Sweden')
+cnames <- rownames(as.data.frame(csem))
+
+bp2 <- barplot(cmeans, names.arg = cnames, ylab = 'mean Ca concentration', main = 'average topsoil Ca by country', las = 2, xpd = FALSE, ylim = c(0,800), cex.names = .8)
+
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans - csem, angle = 90, length = 0.1, 
+       lwd = 1)
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans + csem, angle = 90, length = 0.1, 
+       lwd = 1)
+
+```
+
+```{r}
+
+# making a bar plot of Mn by country
+
+#barplot for topsoil ph
+france.tmn <- envordered$Topsoil.Mn[envordered$Country == 'France']
+belgium.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Belgium']
+denmark.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Denmark']
+germany.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Germany']
+nether.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Netherlands']
+norway.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Norway']
+sweden.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Sweden']
+britain.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Great Britain']
+ireland.tmn <- envordered$Topsoil.Mn[envordered$Country == 'Ireland']
+
+cmeans <- c(mean(belgium.tmn), mean(denmark.tmn), mean(france.tmn), mean(germany.tmn), mean(britain.tmn), mean(ireland.tmn), mean(nether.tmn), mean(norway.tmn), mean(sweden.tmn))
+
+
+sem <- function(x){
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
+
+csem <- tapply(envdata$Topsoil.Mn, envdata$Country, sem)
+csem <- as.data.frame(csem)[c(2:7,9:11),]
+
+
+# cnames <- c('Belgium', 'Denmark', 'France', 'Germany', 'Great Britain', 'Ireland', 'Netherlands', 'Norway', 'Sweden')
+cnames <- rownames(as.data.frame(csem))
+
+bp2 <- barplot(cmeans, names.arg = cnames, ylab = 'mean Mn concentration', main = 'average topsoil Mn by country', las = 2, xpd = FALSE, ylim = c(0,35), cex.names = .8)
+
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans - csem, angle = 90, length = 0.1, 
+       lwd = 1)
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans + csem, angle = 90, length = 0.1, 
+       lwd = 1)
+
+```
+
+```{r}
+
+# making a bar plot of Mn by country
+
+#barplot for topsoil ph
+france.tmg <- envordered$Topsoil.Mg[envordered$Country == 'France']
+belgium.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Belgium']
+denmark.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Denmark']
+germany.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Germany']
+nether.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Netherlands']
+norway.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Norway']
+sweden.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Sweden']
+britain.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Great Britain']
+ireland.tmg <- envordered$Topsoil.Mg[envordered$Country == 'Ireland']
+
+cmeans <- c(mean(belgium.tmg), mean(denmark.tmg), mean(france.tmg), mean(germany.tmg), mean(britain.tmg), mean(ireland.tmg), mean(nether.tmg), mean(norway.tmg), mean(sweden.tmg))
+
+
+sem <- function(x){
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
+
+csem <- tapply(envdata$Topsoil.Mg, envdata$Country, sem)
+csem <- as.data.frame(csem)[c(2:7,9:11),]
+
+
+# cnames <- c('Belgium', 'Denmark', 'France', 'Germany', 'Great Britain', 'Ireland', 'Netherlands', 'Norway', 'Sweden')
+cnames <- rownames(as.data.frame(csem))
+
+bp2 <- barplot(cmeans, names.arg = cnames, ylab = 'mean Mg concentration', main = 'average topsoil Mg by country', las = 2, xpd = FALSE, ylim = c(0,160), cex.names = .8)
+
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans - csem, angle = 90, length = 0.1, 
+       lwd = 1)
+arrows(x0 = bp2, y0 = cmeans, y1 = cmeans + csem, angle = 90, length = 0.1, 
+       lwd = 1)
+
+```
+
