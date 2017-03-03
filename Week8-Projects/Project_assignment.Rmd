@@ -30,7 +30,7 @@ geometry: margin=2.54cm
 
 rm(list=ls())
 getwd()
-setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/Week3-Beta")
+setwd("~/GitHub/QB2017_Gibson/Week8-Projects/")
 
 
 package.list <- c('vegan', 'ade4', 'viridis', 'gplots', 'BiodiversityR', 'indicspecies')
@@ -55,11 +55,12 @@ for (p in package.list){
 
 ```{r}
 
-setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/project")
+#setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/Week8-project")
 
 myData <- read.table("speciesdata_clean.csv", sep=",", header=T, row.names = 1)
 envData <- read.table("environmentaldata(1).csv", sep=",", header=T, row.names = 1)
 
+envData_a <- envData
 
 ##DATA TRANSFORMATIONS
 envData$Topsoil.pH <- (1/(10^envData$Topsoil.pH))
@@ -226,9 +227,77 @@ abline(model1)
 ```
 
 #####Plots of mean chemical composition by country
-```{r}
+```{r, fig.width=8, fig.height=8}
+
+##########################################################################################
+#PLOT OF ENV VARIABLES VS RICHNESS
 
 
+
+
+plot.new()
+#envData_a <- envData
+envData_a <- na.omit(envData_a)
+envData_a$region <- as.factor(substr(rownames(envData_a),1,2))
+#REG <- factor(envData_a$regions, levels=c('UK', 'SE', 'GE', 'DK', 'NL', 'BE', 'NW', 'FR'))
+
+#means_topPH <- tapply(envData_a$Topsoil.pH, envData_a$region, mean)
+#means_subPH <- tapply(envData_a$Subsoil.pH, envData_a$region, mean)
+#means_topAl <- tapply(envData_a$Topsoil.Al, envData_a$region, mean)
+#means_topCa <- tapply(envData_a$Topsoil.Ca, envData_a$region, mean)
+#means_topFe <- tapply(envData_a$Topsoil.Fe, envData_a$region, mean)
+#means_topMg <- tapply(envData_a$Topsoil.Mg, envData_a$region, mean)
+#means_topMn <- tapply(envData_a$Topsoil.Mn, envData_a$region, mean)
+#means_topZn <- tapply(envData_a$Topsoil.Zn, envData_a$region, mean)
+#means_topNO3 <- tapply(envData_a$Topsoil.NO3, envData_a$region, mean)
+#means_topNH4 <- tapply(envData_a$Topsoil.NH4, envData_a$region, mean)
+#means_topOP <- tapply(envData_a$Topsoil.Olsen.P, envData_a$region, mean)
+#means_topC <- tapply(envData_a$Topsoil.C, envData_a$region, mean)
+#means_topN <- tapply(envData_a$Topsoil.N, envData_a$region, mean)
+#means_topP <- tapply(envData_a$Topsoil.P, envData_a$region, mean)
+
+sem <- function(x){
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
+
+#zp.topPH <- tapply(envData_a$Topsoil.pH, envData_a$region, sem)
+#zp.subPH <- tapply(envData_a$Subsoil.pH, envData_a$region, sem)
+#zp.topAl <- tapply(envData_a$Topsoil.Al, envData_a$region, sem)
+#zp.topCa <- tapply(envData_a$Topsoil.Ca, envData_a$region, sem)
+#zp.topFe <- tapply(envData_a$Topsoil.Fe, envData_a$region, sem)
+#zp.topMg <- tapply(envData_a$Topsoil.Mg, envData_a$region, sem)
+#zp.topMn <- tapply(envData_a$Topsoil.Mn, envData_a$region, sem)
+#zp.topZn <- tapply(envData_a$Topsoil.Zn, envData_a$region, sem)
+#zp.topNO3 <- tapply(envData_a$Topsoil.NO3, envData_a$region, sem)
+#zp.topNH4 <- tapply(envData_a$Topsoil.NH4, envData_a$region, sem)
+#zp.topOP <- tapply(envData_a$Topsoil.Olsen.P, envData_a$region, sem)
+#zp.topC <- tapply(envData_a$Topsoil.C, envData_a$region, sem)
+#zp.topN <- tapply(envData_a$Topsoil.N, envData_a$region, sem)
+
+variables <- c('Topsoil.pH', "Subsoil.pH", "Topsoil.Al", 'Topsoil.Ca', 'Topsoil.Fe', 'Topsoil.Mg', "Topsoil.Mn", 'Topsoil.Zn', 'Topsoil.NO3', 'Topsoil.NH4', 
+               'Topsoil.Olsen.P', 'Topsoil.C', 'Topsoil.N')
+
+
+par(mfrow=c(4,4))
+
+i <- 1
+for (x in 11:23){
+  #print(variables[i])
+  mean1 <- tapply(envData_a[,x], envData_a$region, mean)
+  #print(mean1)
+  sem1 <- tapply(envData_a[,x], envData_a$region, sem)
+  bp <- barplot(mean1,ylim = c(0, round(max(mean1)+5, digits = 0)),
+              pch = 15, cex = 1.25, las = 1, cex.lab = 1, cex.axis = 1, cex.names = .8,
+              xlab = "Region", ylab = variables[i], las = 2
+              )
+  
+  arrows(x0 = bp, y0 = mean1, y1 = mean1 - sem1, angle = 90,
+       length = 0.05, lwd=.8)
+  arrows(x0 = bp, y0 = mean1, y1 = mean1 + sem1, angle = 90,
+       length = 0.05, lwd=.8)
+  i <- i + 1
+  
+}
 
 ```
 
