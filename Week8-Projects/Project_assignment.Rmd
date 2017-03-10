@@ -1,38 +1,33 @@
 ---
-title: "Add title of your project"
+title: "Soil or Space? Dissecting the Effects of Soil Chemistry on Species Diversity"
 author: "Alison Partee and Matt Gibson, Quantitative Biodiversity, Indiana University"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 geometry: margin=2.54cm
 ---
 
-## Directions:
-1. Change "Add title of your project" on line 2 (above) to the name of your project.
-2. Change "Add names of team members" on line 3 (above) to the names of team members in your project.
-3. Write a <250 word Abstract describing your team's research.
-4. Write a 1-2 paragraph Introduction providing some background and context for your project.
-5. Set up your working enviroment (set directory, load packages) using the `/Week8-Projects` folder. 
-6. Provide a brief (~1 paragraph) description of the dataset.
-7. Load the dataset and process in ways necessary for any initial analyses.
-8. Use well annotated R chunks to analyze data, make figures, and peform statistics needed to address your quesstions and hypotheses. 
-9. Write a Discussion and Conclusion section to address the questions and hypotheses that you outlined in you outlined in your Abstract and Introuction.
-10. Include citations in the Reference section.
-11. Delete the text in this Directions section.
-12. By Thursday March 9, 23:59, please submit the completed assignment by creating a **pull request** via GitHub. Your pull request should include this file *Project_assignment.Rmd* and the PDF output of `Knitr` (*Project_assignment.pdf*). 
+## ABSTRACT   
+   
+  The availability of key plant soil nutrients affects plant growth ability, and differences in plant growth ability cause species composition variation across environments. To unravel how differences in soil nutrient concentrations affect community composition, we looked at plant species composition and environmental data from 153 acid grassland sites across Europe. Using statistical techniques such as Principal Coordinates Analysis, Distance-based Redundancy Analysis, and Variance Partitioning we explain how spatial and environmental factors drive community variation across environments. Overall, our findings suggest that space alone plays a large role in driving variation across sites. But in particular, extreme soil chemistry appears to significantly affect community composition in the United Kingdom where soil chemicals such as  pH, Al, Ca, Fe, Mg, Mn, NO3, and C are at elevated levels.
+   
+   
+## 1) INTRODUCTION    
+   
+  In this study, we sought to investigate how soil chemistry variation affects the distribution of plant diversity in a dataset containing species composition and soil chemical measurements from 153 acid grasslands in the Atlantic biogeographic region of Europe. As a whole, these grassland sites are slightly acidic (pH ~ 5). Since similar environments have common local adaptations, we predicted that community compositions in regions with similar soil chemical profiles are more similar than those in regions with divergent chemical profiles. Furthermore, we expect that extreme environments are more restrictive because only some species can occupy their specific niches. To test our predictions, we studied variation in soil chemistry and community variation across sites using taxonomic ordination (PCoA) and a distance-based redundancy analysis (dbRDA).   
 
-## ABSTRACT
-
-## 1) INTRODUCTION
-
+  The availability of key nutrients heavily affects plant growth. Plants require large quantities of macronutrients for adequate growth, so soils lacking (or having excess amounts of) these quantities do not allow healthy plant growth. Additionally, soil pH affects the availability of certain nutrients (Jackman and Black, 1951). At an high pH levels, a reaction of phosphate ions with calcium and magnesium causes the formation of a less soluble compound and ultimately a low availability of all three nutrients. Furthermore, contamination by heavy metals also limits growth. In acidic (low pH) soils like those in our data’s sites, aluminum toxicity strongly modulates plant growth (Yang et al., 2015). Previous plant system studies show natural tolerance variation to nutrient extremes (Huante et al., 1995) which may underlie any biased distribution of species observed in this European dataset.   
+     
+  While previous research documents plant adaptations to nutrient extremes (including heavy metals) (Antonovics et al., 1971), isolation-by-distance may cause taxonomic differences among sites with divergent chemical properties (i.e. spatial separation). We estimate the relative effects of space, environment, and their joint interaction to explain patterns of diversity observed in our data. Given the large extent of this dataset, we expect space or the joint interaction of spatial and environmental factors to explain a large portion of community variation.   
+  
 ## 2) SETUP
 
-```{r, echo = F}
-#date: '`r format(Sys.time(), ''%d %B, %Y'')`'
-
+```{r, results = 'hide', message = FALSE, warning = FALSE}
 rm(list=ls())
 getwd()
-setwd("~/GitHub/QB2017_Gibson/Week8-Projects/")
+#setwd("~/GitHub/QB2017_Gibson/Week8-Projects/")
+setwd("c:/Users/matth/Documents/bin/QB2017_Gibson/Week8-Projects")
 
 
 package.list <- c('vegan', 'ade4', 'viridis', 'gplots', 'BiodiversityR', 'indicspecies')
@@ -51,8 +46,10 @@ for (p in package.list){
 
 ```
 
-## 3) DESCRIPTION OF DATA
-
+## 3) DESCRIPTION OF DATA   
+    
+   This data set contains species abundance observations for 397 species at 400 sites spread across 153 acid grasslands in the Atlantic biogeographic region of Europe. Additionally, there is environmental data for each site which includes the following variables: management type, grazing intensity, vegetation height, soil depth, soil pH, metal concentrations, nitrate and ammonium concentrations, total carbon and nitrogen, and Olsen extractable phosphorus. For three select plant species (Rhytidiadelphus squarrosus, Galium saxatile, and Agrostis capillaris) there are measurements for percent nitrogen, carbon, and phosphorous of aboveground tissues. For the purposes of this study, we are concerned with only the species abundance and soil chemical measurements. The data was structured such that each site was actually five randomly chosen 2m x 2m quadrats. To simplify our analysis, species abundances for each site represent the sum across all five quadrats.
+   
 ## 4) LOAD THE DATA
 
 ```{r}
@@ -83,13 +80,14 @@ envData$Topsoil.Al <- log(envData$Topsoil.Al+.01)
 
 ## 5) ANALYSIS: FIGURES AND STATISTICS
 
-```{r}
+#####Plot of sites
+```{r, results = 'hide', message = FALSE, warning = FALSE}
 #PLOT OF SITES
 
 library(rworldmap)
 newmap <- getMap(resolution="low")
 #plot(newmap)
-plot(newmap, xlim = c(-10, 20), ylim = c(40, 60), asp = 1, main="Map of sites")
+plot(newmap, xlim = c(-10, 20), ylim = c(40, 60), asp = 1, main="Figure 1: \n Map of sites")
 
 points(envData$Latitude, envData$Longitude, col = "red", cex = .6)
 
@@ -114,8 +112,11 @@ for (i in s) {
 ```
 
 
+(Figure 1)
+Map of sites – This map shows the distribution of sites across the Atlantic Biogeographic Region of Europe.   
+   
 #####Correlations of environmental variables with richness
-```{r}
+```{r, message = FALSE, warning = FALSE}
 ##########################################################################################
 #CORRELATIONS OF ENVIRONMENTAL VARIABLES WITH RICHNESS
 
@@ -144,12 +145,11 @@ cor2$r[,1]
 
 ```
 
-#####Plots of richness vs. various environmental variables
-```{r, fig.width=8, fig.height=8}
-##########################################################################################
+```{r, fig.width=8, fig.height=8, results = 'hide', message = FALSE, warning = FALSE}
+
 #PLOT OF ENV VARIABLES VS RICHNESS
 
-par(mfrow=c(2,2))
+par(mfrow=c(4,4))
 
 model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.pH), data=bigFrame)
 print(s <- summary(model1))
@@ -179,7 +179,7 @@ mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
 text(x = .00015, y = 55, labels = mylabel, cex=.9)
 abline(model1)
 
-par(mfrow=c(2,2))
+#par(mfrow=c(2,2))
 
 model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Zn), data=bigFrame)
 print(s <- summary(model1))
@@ -197,7 +197,7 @@ abline(model1)
 
 model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.N), data=bigFrame)
 print(s <- summary(model1))
-plot(bigFrame$Topsoil.N, bigFrame$richness, ylab = "Richness", xlab = "Nitrogen",main = "Richness vs. \n Nitrogen Concentration")
+plot(bigFrame$Topsoil.N, bigFrame$richness, ylab = "Richness", xlab = "Nitrogen",main = "Richness vs. \n Total Nitrogen ")
 mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
 text(x = 2, y = 55, labels = mylabel, cex=.9)
 abline(model1)
@@ -209,7 +209,7 @@ mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
 text(x = 2, y = 55, labels = mylabel, cex=.9)
 abline(model1)
 
-par(mfrow=c(2,2))
+#par(mfrow=c(2,2))
 
 model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Al), data=bigFrame)
 print(s <- summary(model1))
@@ -220,66 +220,41 @@ abline(model1)
 
 model1 <- lm(as.numeric(richness) ~ na.omit(Topsoil.Olsen.P), data=bigFrame)
 print(s <- summary(model1))
-plot(bigFrame$Topsoil.Olsen.P, bigFrame$richness, ylab = "Richness", xlab = "Olsen Phos.",main = "Richness vs. \n Olsen Phosphorus")
+plot(bigFrame$Topsoil.Olsen.P, bigFrame$richness, ylab = "Richness", xlab = "Olsen Phos.",main = "Richness vs. \n Olsen Extrc. Phosphorus")
 mylabel = bquote(italic(P) == .(format(s$coefficients[2,4], digits = 3)))
 text(x = 60, y = 50, labels = mylabel, cex=.9)
 abline(model1)
 
 
 ```
+   
+(Figure 2)
+Correlations between different environmental variables and richness: 
+These scatter plots and regression lines show how various environmental variables are correlated with observed richness. Important: altitude, inclination, and vegetation height were not considered in subsequent analyses as they do not pertain to our research question. 
+   
+Strong correlations:
+(+) correlation: Zinc concentration
+(-) correlation: Hydrogen Ion concentration (means pH is positively correlated with richness), Nitrate concentration, Iron concentration, Aluminum concentration.   
+    
+#####Figure 3: Plots of mean chemical composition by country
+```{r, fig.width=8, fig.height=8, warning = FALSE}
 
-#####Plots of mean chemical composition by country
-```{r, fig.width=8, fig.height=8}
-
-##########################################################################################
 #PLOT OF ENV VARIABLES VS RICHNESS
 
-
-
-
 plot.new()
-#envData_a <- envData
-envData_a <- na.omit(envData_a)
-envData_a$region <- as.factor(substr(rownames(envData_a),1,2))
-#REG <- factor(envData_a$regions, levels=c('UK', 'SE', 'GE', 'DK', 'NL', 'BE', 'NW', 'FR'))
 
-#means_topPH <- tapply(envData_a$Topsoil.pH, envData_a$region, mean)
-#means_subPH <- tapply(envData_a$Subsoil.pH, envData_a$region, mean)
-#means_topAl <- tapply(envData_a$Topsoil.Al, envData_a$region, mean)
-#means_topCa <- tapply(envData_a$Topsoil.Ca, envData_a$region, mean)
-#means_topFe <- tapply(envData_a$Topsoil.Fe, envData_a$region, mean)
-#means_topMg <- tapply(envData_a$Topsoil.Mg, envData_a$region, mean)
-#means_topMn <- tapply(envData_a$Topsoil.Mn, envData_a$region, mean)
-#means_topZn <- tapply(envData_a$Topsoil.Zn, envData_a$region, mean)
-#means_topNO3 <- tapply(envData_a$Topsoil.NO3, envData_a$region, mean)
-#means_topNH4 <- tapply(envData_a$Topsoil.NH4, envData_a$region, mean)
-#means_topOP <- tapply(envData_a$Topsoil.Olsen.P, envData_a$region, mean)
-#means_topC <- tapply(envData_a$Topsoil.C, envData_a$region, mean)
-#means_topN <- tapply(envData_a$Topsoil.N, envData_a$region, mean)
-#means_topP <- tapply(envData_a$Topsoil.P, envData_a$region, mean)
+envData_a$region <- as.factor(substr(rownames(envData_a),1,2))
+
 
 sem <- function(x){
   sd(na.omit(x))/sqrt(length(na.omit(x)))
 }
 
-#zp.topPH <- tapply(envData_a$Topsoil.pH, envData_a$region, sem)
-#zp.subPH <- tapply(envData_a$Subsoil.pH, envData_a$region, sem)
-#zp.topAl <- tapply(envData_a$Topsoil.Al, envData_a$region, sem)
-#zp.topCa <- tapply(envData_a$Topsoil.Ca, envData_a$region, sem)
-#zp.topFe <- tapply(envData_a$Topsoil.Fe, envData_a$region, sem)
-#zp.topMg <- tapply(envData_a$Topsoil.Mg, envData_a$region, sem)
-#zp.topMn <- tapply(envData_a$Topsoil.Mn, envData_a$region, sem)
-#zp.topZn <- tapply(envData_a$Topsoil.Zn, envData_a$region, sem)
-#zp.topNO3 <- tapply(envData_a$Topsoil.NO3, envData_a$region, sem)
-#zp.topNH4 <- tapply(envData_a$Topsoil.NH4, envData_a$region, sem)
-#zp.topOP <- tapply(envData_a$Topsoil.Olsen.P, envData_a$region, sem)
-#zp.topC <- tapply(envData_a$Topsoil.C, envData_a$region, sem)
-#zp.topN <- tapply(envData_a$Topsoil.N, envData_a$region, sem)
 
-variables <- c('Topsoil.pH', "Subsoil.pH", "Topsoil.Al", 'Topsoil.Ca', 'Topsoil.Fe', 'Topsoil.Mg', "Topsoil.Mn", 'Topsoil.Zn', 'Topsoil.NO3', 'Topsoil.NH4', 
-               'Topsoil.Olsen.P', 'Topsoil.C', 'Topsoil.N')
+variables <- c('Topsoil pH', "Subsoil pH", "[Aluminium]", '[Calcium]', '[Iron]', '[Magnesium]', "[Manganese]", '[Zinc]', '[Nitrate]', '[Ammonium]', 
+               'Olsen Extrc. Phosphorous', 'Total Carbon', 'Total Nitrogen')
 
-
+colss <- c("red", "blue", "chartreuse2", "darkgoldenrod1","darkgray", "darkorange1", "darksalmon", "darkviolet")
 par(mfrow=c(4,4))
 
 i <- 1
@@ -288,9 +263,11 @@ for (x in 11:23){
   mean1 <- tapply(envData_a[,x], envData_a$region, mean)
   #print(mean1)
   sem1 <- tapply(envData_a[,x], envData_a$region, sem)
-  bp <- barplot(mean1,ylim = c(0, round(max(mean1)+5, digits = 0)),
+  #print(sem1)
+  #print(mean1)
+  bp <- barplot(mean1,
               pch = 15, cex = 1.25, las = 1, cex.lab = 1, cex.axis = 1, cex.names = .8,
-              xlab = "Region", ylab = variables[i], las = 2
+              xlab = "Region", ylab = variables[i], las = 2, col = colss
               )
   
   arrows(x0 = bp, y0 = mean1, y1 = mean1 - sem1, angle = 90,
@@ -302,8 +279,57 @@ for (x in 11:23){
 }
 
 ```
+   
+(Figure 3)
+Bar plots of environmental variable averages by country: 
+These bar plots give a visual representation of how our sites vary in environmental composition by country. For many chemicals, the UK (purple) stands out as being different from other regions. 
+    
+
+#####Average diversity by region
+```{r}
+#Using Shannon's Diversity
+
+ShanH <- function(x = ""){
+  H = 0
+  for (n_i in x){
+    if(n_i > 0){
+      p = n_i / sum(x)
+      H = H - p*log(p)
+    }
+  }
+  return(H)
+}
+
+colss <- c("red", "blue", "chartreuse2", "darkgoldenrod1","darkgray", "darkorange1", "darksalmon", "darkviolet")
+shan <- as.data.frame(apply(myData[,4:ncol(myData)], 1, ShanH))
+shan$region <- substr(rownames(shan),1,2)
+colnames(shan)<- c("shan", "region")
+
+mean1 <- tapply(shan$shan, shan$region, mean)
+sem1 <- tapply(shan$shan, shan$region, sem)
+
+fitanova <- aov(shan ~ region, data = shan)
+print(summary(fitanova))
+print(TukeyHSD(fitanova))
 
 
+
+bp <- barplot(mean1,
+              pch = 15, cex = 1.25, las = 1, cex.lab = 1, cex.axis = 1, cex.names = .8,
+              xlab = "Region", ylab = "Mean Shannon's Diversity", las = 2, col = colss, ylim=c(0, 3.4), main="Figure 4: \n Mean Shannon's Diversity by region")
+arrows(x0 = bp, y0 = mean1, y1 = mean1 - sem1, angle = 90,
+       length = 0.05, lwd=.8)
+arrows(x0 = bp, y0 = mean1, y1 = mean1 + sem1, angle = 90,
+       length = 0.05, lwd=.8)
+
+
+
+```
+   
+(Figure 4)
+Average Shannon’s Diversity by Region:
+Barplot showing the mean +- 1 SE for Shannon’s Diversity by region. Regions vary in overall site diversity on average with Germany, Netherlands, and the United Kingdom being the lowest. An ANOVA (P = 3.78e-09) and post-hoc t-tests were performed.    
+   
 #####Ordination of taxonomic diversity
 ```{r, fig.width=8, fig.height=8}
 par(mfrow=c(1,1))
@@ -330,16 +356,13 @@ par(mar = c(5, 5, 1, 2) + 0.1)
 plot(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2], ylim = c(-0.6, 0.45),
      xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
      ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""),
-     main = "Taxonomic Ordination",
+     main = "Figure 5: \n Taxonomic Ordination",
      pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = F)
 
 axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
 axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
 abline(h = 0, v = 0, lty = 3)
 box(lwd = 2)
-
-
-
 
 data2 <- as.data.frame(spec.pcoa$points)
 data2$cun <- substr(row.names(data2),1,2)
@@ -364,11 +387,9 @@ points(uk[,1], uk[,2],pch=19, cex=2, bg="darkviolet", col="darkviolet")
 
 legend(.4,-.3,c("FR","NW", "BE", "NL", "DK", "GE", "SE", "UK"), cex = .7, col=c("red", "blue", "chartreuse2", "darkgoldenrod1",
                                                                    "darkgray", "darkorange1", "darksalmon", "darkviolet"), fill =c("red", "blue", "chartreuse2", "darkgoldenrod1","darkgray", "darkorange1", "darksalmon", "darkviolet") )
-#I plotted just the country code...full site names were too long
-#(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2],
-#       pch = 19, cex = 3, bg = "gray", col = "gray")
-#text(spec.pcoa$points[ ,1], spec.pcoa$points[ ,2],
-#     labels = substr(row.names(spec.pcoa$points),1,2))
+
+
+####Influential Species#######
 
 specREL <- myData
   for(i in 1:nrow(myData)){
@@ -376,10 +397,13 @@ specREL <- myData
   }
 
 spec.pcoa <- add.spec.scores(spec.pcoa, specREL, method = "pcoa.scores")
-par(mfrow=c(1,1))
-#Is just a mess.........
-#text(spec.pcoa$cproj[ ,1], spec.pcoa$cproj[ ,2],
-#     labels = row.names(spec.pcoa$cproj), col = "black")
+#par(mfrow=c(1,1))
+spec.proj <- as.data.frame(spec.pcoa$cproj)
+
+#Setting a threshold for writing species to plot
+spec.proj <- subset(spec.proj,  abs(Dim1) > .05)
+text(spec.proj$Dim1, spec.proj$Dim2,
+     labels = row.names(spec.proj), col = "black")
 
 
 spe.corr <- add.spec.scores(spec.pcoa, specREL, method = "cor.scores")$cproj
@@ -390,13 +414,15 @@ imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcu
 
 fit <- envfit(spec.pcoa, specREL, perm = 999)
 fit
-
 ```
-
-
+   
+(Figure 5)
+PCoA – Taxonomic Ordination: How do our sites’ community compositions differ?
+Shows sites separated by their differences in species abundances, labelled by country. Sites in the UK cluster stronger than other regions. 
+   
 
 #####Constrained Ordination
-```{r, fig.width=8, fig.height=8}
+```{r, results = 'hide', message = FALSE, warning = FALSE}
 #Isolating the environmental chemical data (removing categorical variables and other plant chemical measurements)
 env.chem <- na.omit(envData_reduced[, 7:19])
 env.chem <- as.matrix(env.chem)
@@ -417,9 +443,12 @@ eu.dbrda.mod1 <- dbrda(spec.db ~ ., as.data.frame(env.chem), na.action=na.omit)
 #Model selection
 eu.dbrda <- ordiR2step(eu.dbrda.mod0, eu.dbrda.mod1, perm.max= 200)
 
+```
+```{r,fig.width=8, fig.height=8}
+
 eu.dbrda$call
 eu.dbrda$anova
-ordiplot(eu.dbrda)
+#ordiplot(eu.dbrda)
 par(mfrow=c(1,1))
 
 #3. use a permutation test to determine the significance of the constrained analysis,
@@ -440,7 +469,7 @@ par(mar = c(5, 5, 4, 4) + 0.1)
 plot(scores(eu.dbrda, display = "wa"), xlim = c(-1.5, 2.2), ylim = c(-2.4, 2.5),
 xlab = paste("dbRDA 1 (", dbrda.explainvar1, "%)", sep = ""),
 ylab = paste("dbRDA 2 (", dbrda.explainvar2, "%)", sep = ""),
-pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
+pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE, main="Figure 6: \n Constrained ordination")
 
 axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
 axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
@@ -489,6 +518,10 @@ at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
 par(mfrow=c(1,1))
 
 ```
+   
+(Figure 6)
+Constrained ordination: How does soil chemistry explain community similarity?
+Here we conducted a redundancy analysis (dbRDA) using all soil chemical variables as the explanatory matrix and the Bray-Curtis similarity metrics as the response to generate a model of the effects of soil nutrients on diversity. We performed permutation tests to evaluate the significance of the model (P = 0.001) as well as to evaluate correlation of each variable with the constrained axis. Axis 1 and 2 explained 11.5% and 6.9% of the variation, respectively.  
 
 ####Variance Partitioning
 ```{r, fig.width=8, fig.height=8}
@@ -497,22 +530,20 @@ envData_reduced <- envData[, 1:23]
 #Remove categorical variables
 envData_reduced <- subset(envData_reduced, select=-c(Mangement.type, Grazing.intensity))
 #Remove country and year
+
 envData_reduced <- subset(envData_reduced, select=-c(Country, Survey.year))
 envData_reduced <- envData_reduced[rownames(envData_reduced) != "GE712", ]
 envData_reduced <- envData_reduced[rownames(envData_reduced) != "GE713", ]
 envData_reduced <- envData_reduced[rownames(envData_reduced) != "GE715", ]
+
 #Remove unneeded data
 myData <- myData[, 4:ncol(myData)]
 XY_soda <- as.data.frame(geoXY(envData_reduced$Latitude, envData_reduced$Longitude))
-#XY_soda <- cbind(row.names((envData_reduced)), XY_soda)
-#colnames(XY_soda) <- c("site", "X", "Y")
-#Begin DISTANCE DECAY CODE
+
+
 xy <- data.frame(site.name = row.names(envData_reduced), lats = envData_reduced$Latitude, lons = envData_reduced$Longitude)
-#coordinates(xy) <- ~lats+lons
 comm.dist <- 1 - vegdist(myData)
-#proj4string(xy) <- CRS("+proj=longlat +datum=NAD83")
-#UTM <- spTransform(xy, CRS("+proj=utm + zone=51 ellps=WGS84"))
-#UTM <- as.data.frame(UTM)
+
 xy$lats_utm <- XY_soda$Y
 xy$lons_utm <- XY_soda$X
 
@@ -532,14 +563,16 @@ xy <- as.data.frame(xy)
 coord.mat <- as.matrix(xy[,4:5])
 
 doubs.pcnmw <- pcnm(dist(coord.mat), w = rs, dist.ret = T)
-doubs.pcnmw$values > 0
+#doubs.pcnmw$values > 0
 
 doubs.space <- as.data.frame(scores(doubs.pcnmw))
 doubs.pcnm.mod0 <- dbrda(spec.db ~ 1, doubs.space)
 doubs.pcnm.mod1 <- dbrda(spec.db ~ ., doubs.space)
+```
+```{r, fig.width=8, fig.height=8, results = 'hide', message = FALSE, warning = FALSE}
 step.pcnm <- ordiR2step(doubs.pcnm.mod0, doubs.pcnm.mod1, perm.max = 200)
 
-plot(step.pcnm)
+#plot(step.pcnm)
 
 step.pcnm$anova
 
@@ -562,10 +595,38 @@ par(mar = c(2,2,2,2))
 plot(doubs.varpart, col ="red", cex = 1.5)
 text(1, 0.25, "Space")
 text(0, 0.25, "Env")
-mtext("Variation partitioning of \nEuropean Plant Diversity", side = 3, line = -3)
+mtext("Figure 7: \n Variation partitioning of \nEuropean Plant Diversity", side = 3, line = -3)
 
 ```
+   
+(Figure 7)
+Variation partitioning: How much is community variation driven by space alone, environment alone, and joint effects of space and environment?
+The variation partitioning results show 0.06 of the community structure variation is driven by underlying environmental variables alone, 0.15 of the variation is driven by changes in spatial position alone, 0.14 of the variation is driven by spatially structured environmental variation, and 0.64 is explained elsewhere.   
+   
 
-## 6) DISCUSSION AND CONCLUSION
 
-## 7) REFERENCES
+## 6) DISCUSSION
+   
+  Our results show several environmental soil variables are tied to species community composition. The scatter plots and regression lines in Figure 2 show correlations between environmental variables and community richness, but lack information about site-specific environmental factors. Furthermore, alpha diversity metrics like richness may fail to capture the full relationship spectrum between diversity and environmental variables. In Figure 4, a Principal Coordinates Analysis (PCoA) of taxonomic diversity shows our sites differ in community composition by their position on the graph relative to the axes. The United Kingdom appears more tightly clustered than any other region. This spatial difference makes sense given the geographic barrier between the UK and the rest of Europe. Other countries had less distinct groupings on the PCoA, meaning their community composition tended to be more similar to other countries than that of the UK.    
+     
+  Given that regions in our data set differ in taxonomic diversity, we next investigated how soil chemistry affects community composition variation. Soil chemicals (including pH) are highly variable among all eight regions. The UK is an outlier because it has significantly different values from other countries for 5 of our 13 environmental variables (7 when Norway is excluded) (Figure 3). Perhaps most striking is the highly elevated concentrations of aluminum in the UK which, combined with the overall lower pH, could lead to drastic effects on nutrient availability and therefore affect community composition variation. Our Distance-based Redundancy Analysis allowed us to formally test the effects of environment on diversity. In agreement with the UK’s unique soil chemistry, our ordination revealed that eight of the nine environmental chemicals identified in the redundancy analysis were influential on the constrained axis based on permutation tests (P-values all 0.0001) with loadings showing effects in the direction of the UK (Figure 6). These eight chemicals were pH, Al, Ca, Fe, Mg, Mn, NO3, and C. Based on our analyses, the UK’s unique chemical composition affects species composition in UK sites.
+      
+  Variance Partitioning (Figure 6) shows how environmental factors alone, spatial factors alone, and joint spatial and environmental effects drive variation in community composition between sites. The results indicate 0.06 of the community structure variation comes from only environmental differences, 0.15 of the variation comes from only spatial factors, and 0.14 of the variation comes from the interaction of the two. According to this model, more variation comes from spatial differences than environmental differences, initially seeming to contradict our hypothesis. However, due to the large geographic extent of our data (Figure 1), it is reasonable to expect that most of our sites’ community variation is due to spatial effects. This test alone does not discredit the effects of soil chemistry on species diversity. This is especially true in the UK where several soil chemical levels significantly differ from those in other regions and community composition appears to be most affected by soil chemistry.   
+       
+  It is reasonable to expect that regions with very specific and/or extreme nutrient composition (i.e. the UK), have reduced diversity due to niche specialization requirements. In the UK, low pH and high concentrations of aluminum can inhibit the growth and survival of many plants. We tested this hypothesis by averaging Shannon’s Diversity values across sites in each region (Figure 4). Shannon’s Diversity index varied significantly by region (P = 3.78e-9; F = 8.953) and Shannon’s Diversity in the UK is on average lower than most regions (excluding Germany and Netherlands). Post-hoc tests revealed Shannon’s Diversity in the UK significantly differs from only Norway and France (P = 0.01 and 0.000002, respectively). Based on our statistical tests, the UK does not have significantly lower Shannon’s Diversity than most of the regions, despite being lower overall. 
+   
+## 7) CONCLUSION     
+  Although the results of the variance partitioning suggest spatial separation is the primary driver of species diversity across all sites in this study, the UK’s extreme soil chemistry likely has a significant effect on community composition. Elevated levels of aluminum, calcium, iron, magnesium, and low pH compared to the rest of the regions likely have major effects on plant growth in the UK. This extreme soil chemistry may be restricting the growth of certain adapted species leading to the observed taxonomic dissimilarity between UK and the other regions. Our results support our prediction that regions with similar chemical profiles are taxonomically similar. Generally, all regions besides the UK have similar chemical profiles and show less clustering in our ordination analyses whereas UK sites cluster together more tightly. However, our prediction that extreme environments are more restrictive is not supported by our results. Average Shannon’s Diversity is not lower overall in the UK compared to other regions.
+    
+## 8) REFERENCES
+   
+
+Antonovics, J., Bradshaw, A.D., & Turner, R.G. 1971. Heavy Metal Tolerance in Plants. Advances in Ecological Research 7: 1-85.
+   
+Huante, P., Rincon, E., & Acosta, I. 1995. Nutrient Availability and growth Rate of 34 Woody Species from a Tropical Deciduous Forest in Mexico. Functional Ecology 9(6): 849-858.  
+   
+Jackman, R.H. & Black, C.A. Solubility Of Iron, Aluminum, Calcium, And Magnesium Inositol Phosphates At Different pH Values. Soil Science 72(3): 179-186.
+    
+Stevens et al. 2011. Grassland species composition and biogeochemistry in 153 sites along environmental gradients in Europe. Ecology 92(7): 1385-1548   
+   
+Yang et al 2015. Effect of Low pH and Aluminum Toxicity on the Photosynthetic Characteristics of Different Fast-Growing Eucalyptus Vegetatively Propagated Clones. PLoS ONE 10(6): e0130963.
